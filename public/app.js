@@ -1,3 +1,21 @@
+// Permanent Backend Server & API Routing
+const PERMANENT_BACKEND = 'https://spleen-uniformly-seminar.ngrok-free.dev';
+
+function getBackendBase() {
+  const host = window.location.hostname;
+  if (host === 'localhost' || host === '127.0.0.1' || host.includes('ngrok')) {
+    return '';
+  }
+  return localStorage.getItem('custom_backend_url') || PERMANENT_BACKEND;
+}
+
+function apiUrl(path) {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) return path;
+  const base = getBackendBase();
+  return base ? `${base}${path.startsWith('/') ? '' : '/'}${path}` : path;
+}
+
 // State
 let currentAlbum = null;
 let currentPlaylist = [];
@@ -227,7 +245,7 @@ async function fetchAlbumFromUrl(url) {
   btnFetch.innerHTML = '<span>Inspecting...</span>';
 
   try {
-    const res = await fetch('/api/inspect-link', {
+    const res = await fetch(apiUrl('/api/inspect-link'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url })
@@ -353,7 +371,7 @@ async function downloadMediaAction(format) {
   queueTrackStatus.textContent = `${currentSingleMedia.title} (${format === 'mp4' ? 'MP4' : currentAudioQuality.toUpperCase()})`;
 
   try {
-    const res = await fetch('/api/download-media', {
+    const res = await fetch(apiUrl('/api/download-media'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -386,7 +404,7 @@ async function downloadMediaAction(format) {
 
 async function cancelActiveDownload() {
   try {
-    const res = await fetch('/api/cancel-download', {
+    const res = await fetch(apiUrl('/api/cancel-download'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ jobId: activeDownloadJobId })
@@ -410,7 +428,7 @@ if (btnDownloadMp4) {
 if (btnOpenSingleFinder) {
   btnOpenSingleFinder.addEventListener('click', async () => {
     try {
-      await fetch('/api/open-folder', { method: 'POST' });
+      await fetch(apiUrl('/api/open-folder'), { method: 'POST' });
     } catch (e) {}
   });
 }
@@ -526,7 +544,7 @@ btnDownloadAlbum.addEventListener('click', async () => {
   queueTrackStatus.textContent = `Starting ${currentAlbum.title}...`;
 
   try {
-    const res = await fetch('/api/download-album', {
+    const res = await fetch(apiUrl('/api/download-album'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ album: currentAlbum, quality: currentAudioQuality, codec: currentAudioCodec })
@@ -555,7 +573,7 @@ async function downloadSingleTrackAction(track, idx) {
   queueTrackStatus.textContent = `Downloading "${track.title}" (${qLabel})...`;
 
   try {
-    const res = await fetch('/api/download-track', {
+    const res = await fetch(apiUrl('/api/download-track'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -590,7 +608,7 @@ btnPlayAlbum.addEventListener('click', () => {
 // Open Album Folder in Finder
 btnOpenAlbumFolder.addEventListener('click', () => {
   if (currentAlbum) {
-    fetch('/api/open-folder', {
+    fetch(apiUrl('/api/open-folder'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ artist: currentAlbum.artist, album: currentAlbum.title })
@@ -599,19 +617,19 @@ btnOpenAlbumFolder.addEventListener('click', () => {
 });
 
 btnOpenFinder.addEventListener('click', () => {
-  fetch('/api/open-folder', { method: 'POST' });
+  fetch(apiUrl('/api/open-folder'), { method: 'POST' });
 });
 
 const btnQuickFinder = document.getElementById('btn-quick-finder');
 if (btnQuickFinder) {
   btnQuickFinder.addEventListener('click', () => {
-    fetch('/api/open-folder', { method: 'POST' });
+    fetch(apiUrl('/api/open-folder'), { method: 'POST' });
   });
 }
 
 // SSE Event Stream for live progress updates
 function initEventSource() {
-  const evtSource = new EventSource('/api/events');
+  const evtSource = new EventSource(apiUrl('/api/events'));
 
   evtSource.addEventListener('download_progress', e => {
     const data = JSON.parse(e.data);
@@ -873,7 +891,7 @@ const btnCopyQuickUrl = document.getElementById('btn-copy-quick-url');
 
 async function loadNetworkInfo() {
   try {
-    const res = await fetch('/api/network-info');
+    const res = await fetch(apiUrl('/api/network-info'));
     if (res.ok) {
       const data = await res.json();
       if (mobileUrlInput) mobileUrlInput.value = data.localUrl || data.webUrl;
@@ -946,7 +964,7 @@ function handleDownloadProgress(data) {
           actionContainer.innerHTML = `<span class="track-status-pill status-done" title="Open in Finder">Done${sizeInfo} ✓</span>`;
           actionContainer.querySelector('.status-done')?.addEventListener('click', (e) => {
             e.stopPropagation();
-            fetch('/api/open-folder', {
+            fetch(apiUrl('/api/open-folder'), {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ artist: currentAlbum?.artist, album: currentAlbum?.title })
@@ -1028,7 +1046,7 @@ function loadTrack(idx) {
   if (row) row.classList.add('playing');
 
   // Use local stream if available, otherwise Apple Music official previewUrl
-  const audioSrc = track.streamUrl && track.filename ? track.streamUrl : (track.previewUrl || track.streamUrl);
+  const audioSrc = track.streamUrl && track.filename ? apiUrl(track.streamUrl) : (track.previewUrl || apiUrl(track.streamUrl));
   audioEngine.src = audioSrc;
   audioEngine.play().then(() => {
     setPlayingState(true);
@@ -1150,7 +1168,7 @@ async function loadLyrics(track) {
   try {
     let lyricsText = null;
     if (track.lyricsUrl) {
-      const res = await fetch(track.lyricsUrl);
+      const res = await fetch(apiUrl(track.lyricsUrl));
       if (res.ok) lyricsText = await res.text();
     }
 
@@ -1241,7 +1259,7 @@ btnRefreshLibrary.addEventListener('click', loadOfflineLibrary);
 
 async function loadOfflineLibrary() {
   try {
-    const res = await fetch('/api/library');
+    const res = await fetch(apiUrl('/api/library'));
     const data = await res.json();
 
     if (!data.albums || data.albums.length === 0) {
@@ -1256,7 +1274,7 @@ async function loadOfflineLibrary() {
     data.albums.forEach(album => {
       const card = document.createElement('div');
       card.className = 'album-card';
-      const cover = album.coverUrl || 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23222%22/></svg>';
+      const cover = album.coverUrl ? apiUrl(album.coverUrl) : 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23222%22/></svg>';
 
       let totalBytes = 0;
       if (album.tracks) {

@@ -1,0 +1,15 @@
+[build]
+  publish = "public"
+
+# Proxy all API and streaming requests to the live backend server
+[[redirects]]
+  from = "/api/*"
+  to = "https://spleen-uniformly-seminar.ngrok-free.dev/api/:splat"
+  status = 200
+  force = true
+
+# Single Page App routing fallback
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
