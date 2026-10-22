@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Local sensitive configuration & secrets
+config.local.json
+.env
+
+# Large external binaries (auto-downloaded via postinstall)
+bin/yt-dlp
+
+# Logs
+*.log
+server.log
+server.error.log
+
+# Tunnels & Runtime state
+public_url.txt
+.temp*
+
+# OS Files
+.DS_Store
+Thumbs.db
