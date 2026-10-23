@@ -48,7 +48,7 @@ exports.handler = async function(event, context) {
     const filename = `${cleanFileName(artist)} - ${cleanFileName(title)}.mp3`;
 
     // 1. Direct preview / CDN stream if present
-    if (!previewUrl || !previewUrl.startsWith('http')) {
+    if (!previewUrl || !previewUrl.startsWith('http') || /saavncdn\.com/i.test(previewUrl)) {
       try {
         const searchQuery = query || `${artist} ${title}`;
         const itunesApi = `https://itunes.apple.com/search?term=${encodeURIComponent(searchQuery)}&entity=song&limit=1`;
