@@ -722,19 +722,6 @@ async function downloadMediaAction(format) {
     }
   }
 }
-      const span = btn.querySelector('span');
-      if (span) {
-        if (format === 'mp4') {
-          const mp4Size = currentSingleMedia.estimatedSizes?.mp4 ? ` (${currentSingleMedia.estimatedSizes.mp4})` : '';
-          span.textContent = `Download MP4 (Video)${mp4Size}`;
-        } else {
-          const qLabel = currentAudioQuality === 'hires' ? 'Hi-Res Lossless (24-bit)' : (currentAudioQuality === 'lossless' ? `Lossless (${currentAudioCodec.toUpperCase()})` : 'MP3 (320k)');
-          span.textContent = `Download ${qLabel}`;
-        }
-      }
-    }
-  }
-}
 
 async function cancelActiveDownload() {
   try {
