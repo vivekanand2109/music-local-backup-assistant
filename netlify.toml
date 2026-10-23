@@ -17,12 +17,12 @@
 [[headers]]
   for = "/app.css"
   [headers.values]
-    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+    Cache-Control = "no-cache, no-store, must-revalidate"
 
 [[headers]]
   for = "/app.js"
   [headers.values]
-    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+    Cache-Control = "no-cache, no-store, must-revalidate"
 
 [[headers]]
   for = "/sitemap.xml"
