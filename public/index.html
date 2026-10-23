@@ -1,39 +1,192 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" prefix="og: https://ogp.me/ns#">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Apple Music • Offline Downloader & Player</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5.0">
+  
+  <!-- Primary SEO Meta Tags -->
+  <title>Appllify Music • Free Lossless & Hi-Res Music Downloader & Player</title>
+  <meta name="title" content="Appllify Music • Free Lossless & Hi-Res Music Downloader & Player">
+  <meta name="description" content="Download Apple Music, Spotify, YouTube & SoundCloud tracks in studio-grade Lossless ALAC (up to 24-bit/192kHz), FLAC & 320kbps MP3 with full metadata, synced lyrics and Ultra-HD artwork. Free, fast & unlimited.">
+  <meta name="keywords" content="appllify, appllify music, apple music downloader, lossless music downloader, hi-res lossless, ALAC downloader, flac downloader, 320kbps mp3, offline music player, download lyrics lrc, spotify downloader, youtube audio downloader, soundcloud downloader">
+  <meta name="author" content="Appllify Music">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <link rel="canonical" href="https://appllifymusic.netlify.app/">
+
+  <!-- Google Search Console Verification Meta Tag Placeholder -->
+  <!-- Users can update this via the SEO & Console Settings modal or directly in this tag -->
+  <meta name="google-site-verification" content="GSC_VERIFICATION_CODE_HERE" id="gsc-meta-tag">
+
+  <!-- Open Graph / Facebook / WhatsApp -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://appllifymusic.netlify.app/">
+  <meta property="og:site_name" content="Appllify Music">
+  <meta property="og:title" content="Appllify Music • Free Lossless & Hi-Res Music Downloader & Player">
+  <meta property="og:description" content="Download Apple Music, Spotify, YouTube & SoundCloud tracks in pure Lossless ALAC & FLAC (up to 24-bit/192kHz) with karaoke lyrics and Ultra-HD cover art.">
+  <meta property="og:image" content="https://appllifymusic.netlify.app/og-banner.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Appllify Music Studio Player & Downloader">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://appllifymusic.netlify.app/">
+  <meta name="twitter:title" content="Appllify Music • Free Lossless & Hi-Res Music Downloader">
+  <meta name="twitter:description" content="Download Apple Music, Spotify, YouTube & SoundCloud in studio-grade 24-bit Lossless ALAC/FLAC. Free offline music hub.">
+  <meta name="twitter:image" content="https://appllifymusic.netlify.app/og-banner.png">
+
+  <!-- Mobile & PWA Optimization -->
+  <meta name="theme-color" content="#0a0a0c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Appllify">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%23FC3C44'/><stop offset='50%25' stop-color='%23F92A54'/><stop offset='100%25' stop-color='%239B51E0'/></linearGradient></defs><rect width='512' height='512' rx='128' fill='%230a0a0c'/><circle cx='256' cy='256' r='180' fill='url(%23g)' opacity='0.15'/><path d='M340 160v150a50 50 0 1 1-40-49V200l-120 28v112a50 50 0 1 1-40-49V160l200-40z' fill='url(%23g)'/></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%23FC3C44'/><stop offset='100%25' stop-color='%239B51E0'/></linearGradient></defs><circle cx='50' cy='50' r='45' fill='%23111'/><path d='M65 30v30a10 10 0 1 1-8-9.8V38l-24 5.6v22.4a10 10 0 1 1-8-9.8V30l40-8z' fill='url(%23g)'/></svg>">
+
+  <!-- Stylesheet -->
   <link rel="stylesheet" href="app.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎵</text></svg>">
+
+  <!-- Schema.org JSON-LD Structured Data for Google Rich Snippets & Knowledge Graph -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "@id": "https://appllifymusic.netlify.app/#app",
+        "name": "Appllify Music",
+        "url": "https://appllifymusic.netlify.app/",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "All (Web, macOS, iOS, Windows, Android, Linux)",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "description": "Appllify Music allows you to download and stream songs, albums, and playlists from Apple Music, Spotify, YouTube, and SoundCloud in Studio Master Lossless ALAC (up to 24-bit/192kHz), FLAC and 320kbps MP3 with full metadata, lyrics and Ultra-HD artwork.",
+        "featureList": [
+          "Apple Music 1-Click Lossless Album Downloader",
+          "Studio Master Hi-Res Audio (24-bit up to 192 kHz)",
+          "Apple Lossless Audio Codec (ALAC) & FLAC Support",
+          "Synchronized Karaoke Lyrics (.lrc) & ID3 Lyrics Embedding",
+          "Ultra-HD 3000px Album Art Embedding",
+          "Universal Platform Support (YouTube, Spotify, SoundCloud, Instagram, TikTok)",
+          "Built-in Glassmorphic Apple Music Player with Equalizer",
+          "Worldwide Remote Download to Mac Finder"
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://appllifymusic.netlify.app/#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How do I download music in Lossless ALAC or Hi-Res with Appllify Music?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Paste any Apple Music, Spotify, YouTube, or SoundCloud link into the search box, pick your preferred audio quality (Hi-Res Lossless 24-bit, Lossless ALAC, or 320k MP3), and click 'Fetch & Download'. The audio is downloaded, tagged with cover art and lyrics, and ready for offline playback."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is Appllify Music completely free to use?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, Appllify Music is 100% free and unlimited. You can download and stream as many songs and albums as you like without subscriptions or hidden fees."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What is the difference between ALAC and FLAC?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "ALAC (Apple Lossless Audio Codec) is Apple's native lossless format stored inside .m4a files. It plays natively in macOS Music.app, iPhone, Finder, and Safari without needing any third-party player. FLAC is the open-source audiophile standard. Both provide bit-perfect studio master sound."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I download entire albums in one click?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes! When you paste an Apple Music album link, Appllify Music displays the complete tracklist, cover art, and metadata, with a 1-Click 'Download Album' button that saves the entire collection organized into folders."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I install Appllify Music on my mobile phone (iPhone or Android)?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Open https://appllifymusic.netlify.app in Safari on iOS, tap the Share icon, then select 'Add to Home Screen'. On Android, tap the three dots in Chrome and tap 'Install app'. Appllify Music installs as a native-feeling full-screen app."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <!-- Google AdSense Script Placeholder -->
+  <!-- Replace ca-pub-XXXXXXXXXXXXXXXX with your actual Google AdSense publisher ID -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX"
+     crossorigin="anonymous" id="google-adsense-script"></script>
 </head>
 <body class="dark-theme">
   <!-- Dynamic blurred background for current album -->
-  <div id="ambient-backdrop" class="ambient-backdrop"></div>
+  <div id="ambient-backdrop" class="ambient-backdrop" aria-hidden="true"></div>
+
+  <!-- Top Announcement / Monetization Bar -->
+  <aside class="appllify-top-banner" id="appllify-top-banner">
+    <div class="top-banner-content">
+      <span class="banner-badge">✨ NEW</span>
+      <span class="banner-text"><strong>Appllify Music v2.5</strong> — Studio 24-bit Lossless ALAC & FLAC Audio is live!</span>
+      <span class="banner-divider">•</span>
+      <span class="banner-sub">Free & Unlimited Worldwide</span>
+    </div>
+    <div class="top-banner-actions">
+      <button id="btn-open-monetization-modal" class="btn-banner-link" title="Ads & SEO Settings">⚙️ Ad & Console Settings</button>
+      <button id="btn-close-top-banner" class="btn-banner-close" aria-label="Dismiss banner">✕</button>
+    </div>
+  </aside>
 
   <div class="app-layout">
-    <!-- Sidebar -->
-    <aside class="sidebar">
+    <!-- Desktop Sidebar Navigation -->
+    <aside class="sidebar" id="app-sidebar">
+      <!-- Appllify Brand Header -->
       <div class="brand">
-        <div class="apple-logo">
-          <svg viewBox="0 0 170 170" width="28" height="28" fill="url(#apple-grad)">
+        <div class="appllify-logo" aria-label="Appllify Music Logo">
+          <svg viewBox="0 0 200 200" width="34" height="34" fill="none">
             <defs>
-              <linearGradient id="apple-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <linearGradient id="appllify-grad" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stop-color="#FC3C44" />
-                <stop offset="100%" stop-color="#F92A54" />
+                <stop offset="60%" stop-color="#F92A54" />
+                <stop offset="100%" stop-color="#9B51E0" />
               </linearGradient>
+              <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="8" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
             </defs>
-            <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.69-3.04-7.67-7.81-11.93-14.31-7.24-11.1-12.87-23.75-16.89-37.95-4.02-14.2-6.03-27.18-6.03-38.93 0-14.68 3.52-27.02 10.57-37.03 7.05-10.01 16.29-15.15 27.72-15.42 4.9 0 10.37 1.34 16.42 4.02 6.04 2.68 9.99 4.07 11.83 4.17 1.45 0 5.46-1.42 12.04-4.26 6.57-2.84 12.27-4.13 17.08-3.86 13.58.64 24.36 5.46 32.32 14.46-11.96 7.23-17.81 17.15-17.56 29.77.25 10.15 4.13 18.66 11.64 25.53 7.51 6.87 16.38 10.66 26.62 11.38-2.35 7.4-5.32 15.02-8.91 22.86zM119.22 33.15c0-7.73 2.76-14.88 8.28-21.45 5.52-6.57 12.26-10.74 20.22-12.51.54 1.19.82 2.45.82 3.79 0 7.62-2.87 14.84-8.61 21.66-5.74 6.82-12.64 10.8-20.71 11.94z"/>
+            <circle cx="100" cy="100" r="90" fill="rgba(252,60,68,0.12)" />
+            <circle cx="100" cy="100" r="88" stroke="url(#appllify-grad)" stroke-width="6" opacity="0.6" />
+            <!-- Musical Waveforms + Stylized Apple Curve -->
+            <path d="M55 108c0-10 6-18 16-18s16 8 16 18-6 18-16 18-16-8-16-18z" fill="url(#appllify-grad)" />
+            <path d="M87 90v-30c0-6 4-10 10-10l45-10c5-1 10 3 10 8v52" stroke="url(#appllify-grad)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M125 104c0-9 6-16 15-16s15 7 15 16-6 16-15 16-15-7-15-16z" fill="url(#appllify-grad)" />
+            <path d="M87 75l65-14" stroke="url(#appllify-grad)" stroke-width="6" stroke-linecap="round" />
+            <!-- Glowing Audio Wave Pulses -->
+            <path d="M30 100c0-12 3-20 6-25M170 100c0-12-3-20-6-25" stroke="url(#appllify-grad)" stroke-width="4" stroke-linecap="round" opacity="0.5" />
           </svg>
         </div>
         <div class="brand-text">
-          <span class="brand-name">Music</span>
-          <span class="badge-offline">Offline</span>
+          <span class="brand-name">Appllify<span class="brand-accent">Music</span></span>
+          <span class="badge-studio">STUDIO</span>
         </div>
       </div>
 
-      <nav class="nav-menu">
-        <div class="nav-section-title">Apple Music</div>
+      <!-- Navigation Menu -->
+      <nav class="nav-menu" aria-label="Main Navigation">
+        <div class="nav-section-title">Music & Downloader</div>
         <button id="nav-downloader" class="nav-item active">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -49,10 +202,22 @@
             <circle cx="6" cy="18" r="3"></circle>
             <circle cx="18" cy="16" r="3"></circle>
           </svg>
-          <span>Downloaded Albums</span>
+          <span>Offline Library</span>
+          <span id="nav-library-count" class="nav-badge-count">0</span>
         </button>
 
-        <div class="nav-section-title">Folders & Remote</div>
+        <div class="nav-section-title">Shows & Movies</div>
+        <button id="nav-shows" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+            <line x1="7" y1="2" x2="7" y2="22"></line>
+            <line x1="17" y1="2" x2="17" y2="22"></line>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+          </svg>
+          <span>Shows by Part</span>
+        </button>
+
+        <div class="nav-section-title">Tools & Remote</div>
         <button id="btn-open-finder" class="nav-item">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
@@ -70,7 +235,26 @@
           </svg>
           <span>Share From Phone</span>
         </button>
+
+        <button id="btn-open-shortcuts" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+            <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M6 16h12"></path>
+          </svg>
+          <span>Shortcuts</span>
+        </button>
       </nav>
+
+      <!-- Sidebar Monetization / Ad Unit -->
+      <div class="ad-unit-sidebar" id="ad-slot-sidebar" data-ad-slot="sidebar">
+        <!-- Google AdSense ad slot or Sleek Fallback Sponsor Card -->
+        <div class="ad-card-fallback">
+          <div class="ad-pill">SPONSORED</div>
+          <div class="ad-card-title">Appllify Hi-Fi Audio</div>
+          <div class="ad-card-desc">Studio-grade master audio DACs & lossless headphone amplifiers.</div>
+          <a href="https://appllifymusic.netlify.app" target="_blank" rel="noopener" class="ad-card-cta">Explore Gear →</a>
+        </div>
+      </div>
 
       <!-- Active download queue indicator in sidebar -->
       <div id="sidebar-queue" class="sidebar-queue hidden">
@@ -89,24 +273,41 @@
     </aside>
 
     <!-- Main Content Area -->
-    <main class="main-content">
+    <main class="main-content" id="main-content">
       <!-- Search / Input Header -->
       <header class="top-header">
+        <!-- Mobile Header Bar: Brand Logo & Title (visible on mobile only) -->
+        <div class="mobile-header-brand">
+          <div class="mobile-logo-circle">
+            <span class="mobile-logo-icon">🎵</span>
+          </div>
+          <div class="mobile-brand-title">
+            <span>Appllify</span><span class="brand-accent">Music</span>
+          </div>
+          <div class="mobile-header-actions">
+            <button id="btn-mobile-share-header" class="mobile-icon-btn" title="Remote Share">📱</button>
+            <button id="btn-mobile-settings-header" class="mobile-icon-btn" title="Settings">⚙️</button>
+          </div>
+        </div>
+
         <div class="input-container">
-          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
           <input
             id="url-input"
-            type="text"
-            placeholder="Paste ANY link to download (Spotify, YouTube, Apple Music, Instagram, SoundCloud, X, etc.)..."
+            type="url"
+            inputmode="url"
+            placeholder="Paste ANY link (Apple Music, Spotify, YouTube, Instagram, SoundCloud, etc.)..."
             autocomplete="off"
+            aria-label="Media or Music URL input"
           />
-          <button id="btn-fetch" class="btn-primary">
+          <button id="btn-fetch" class="btn-primary" aria-label="Fetch and inspect link">
             <span>Fetch & Download</span>
           </button>
         </div>
+
         <div class="header-pills-row">
           <div class="quality-selector-pill">
             <span class="quality-pill-label">Audio Quality:</span>
@@ -121,7 +322,7 @@
                 <span class="chip-badge">320K</span> High Quality
               </button>
             </div>
-            <select id="header-codec-select" class="header-codec-select" title="Lossless Audio Format">
+            <select id="header-codec-select" class="header-codec-select" title="Lossless Audio Format" aria-label="Select audio codec">
               <option value="alac" selected>ALAC (.m4a)</option>
               <option value="flac">FLAC (.flac)</option>
               <option value="mp3">MP3 (.mp3)</option>
@@ -141,19 +342,76 @@
         </div>
       </header>
 
+      <!-- Top Leaderboard Ad Slot (Responsive 728x90 desktop / 320x50 mobile) -->
+      <section class="ad-unit-banner" id="ad-slot-header" data-ad-slot="header" aria-label="Advertisement Banner">
+        <div class="ad-banner-fallback">
+          <span class="ad-pill">ADVERTISEMENT</span>
+          <span class="ad-banner-text"><strong>Appllify Studio Pro</strong> — Experience bit-for-bit lossless master audio with zero compression.</span>
+          <a href="https://appllifymusic.netlify.app" class="ad-banner-link">Learn More →</a>
+        </div>
+      </section>
+
       <!-- View: Downloader / Current Album -->
       <section id="view-downloader" class="view-section active">
-        <!-- Empty / Welcome state -->
+        <!-- Appllify Hero Section -->
+        <div class="appllify-hero-card">
+          <div class="hero-badge">
+            <span class="hero-sparkle">✦</span>
+            <span>APPLLIFY STUDIO AUDIO ENGINE v2.5</span>
+          </div>
+          <h1 class="hero-title">Download Studio Lossless Music & Media</h1>
+          <p class="hero-subtitle">
+            Paste links from <strong>Apple Music, Spotify, YouTube, SoundCloud, Instagram</strong> and download in 
+            <strong class="text-gradient">pure 24-bit Lossless ALAC, FLAC & 320k MP3</strong> with Ultra-HD artwork and synchronized karaoke lyrics.
+          </p>
+
+          <!-- Supported Platforms Showcase Pills -->
+          <div class="platforms-ribbon" aria-label="Supported Platforms">
+            <span class="platform-chip"><span class="chip-dot dot-apple"></span> Apple Music</span>
+            <span class="platform-chip"><span class="chip-dot dot-spotify"></span> Spotify</span>
+            <span class="platform-chip"><span class="chip-dot dot-youtube"></span> YouTube</span>
+            <span class="platform-chip"><span class="chip-dot dot-soundcloud"></span> SoundCloud</span>
+            <span class="platform-chip"><span class="chip-dot dot-instagram"></span> Instagram Reels</span>
+            <span class="platform-chip"><span class="chip-dot dot-tiktok"></span> TikTok</span>
+          </div>
+
+          <!-- Feature Highlights Grid -->
+          <div class="hero-features-grid">
+            <div class="feature-item">
+              <div class="feature-icon">💎</div>
+              <div class="feature-title">24-Bit Studio Master</div>
+              <div class="feature-desc">Bit-for-bit studio audio up to 192 kHz without lossy compression.</div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon">🎤</div>
+              <div class="feature-title">Synced Karaoke Lyrics</div>
+              <div class="feature-desc">Embedded ID3 lyrics and synchronized .lrc files highlight in real-time.</div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon">🖼️</div>
+              <div class="feature-title">3000px Ultra-HD Art</div>
+              <div class="feature-desc">Original album covers embedded natively into every song file.</div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon">🌍</div>
+              <div class="feature-title">Worldwide Remote</div>
+              <div class="feature-desc">Send links from iPhone or Android and download directly to your Mac.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sample Links Box -->
         <div id="welcome-state" class="welcome-card">
-          <div class="welcome-icon">⚡</div>
-          <h2>Universal 1-Click Media Downloader</h2>
-          <p>Share or paste a link from <strong>ANY platform</strong> — Spotify, Apple Music, YouTube, Instagram Reels, SoundCloud, TikTok, X — to download straight into your Mac's Finder!</p>
+          <div class="welcome-header-line">
+            <span class="welcome-icon">⚡</span>
+            <h3>Quick Start Sample Links</h3>
+          </div>
+          <p>Click any sample link below to test Appllify's 1-click inspection and lossless downloader:</p>
           <div class="sample-links">
-            <span class="sample-label">Try sample:</span>
-            <button class="sample-chip" data-url="https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT">🟢 Spotify • Rick Astley</button>
-            <button class="sample-chip" data-url="https://music.apple.com/us/album/1989-taylors-version-deluxe/1713845538">🎵 Apple Music • 1989</button>
-            <button class="sample-chip" data-url="https://www.youtube.com/watch?v=kffacxfA7G4">🔴 YouTube • Video/Audio</button>
-            <button class="sample-chip" data-url="https://soundcloud.com/octobersveryown/drake-war">🟠 SoundCloud • Drake</button>
+            <button class="sample-chip" data-url="https://music.apple.com/us/album/1989-taylors-version-deluxe/1713845538">🎵 Apple Music • 1989 Deluxe Album</button>
+            <button class="sample-chip" data-url="https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT">🟢 Spotify • Rick Astley Track</button>
+            <button class="sample-chip" data-url="https://www.youtube.com/watch?v=dQw4w9WgXcQ">🔴 YouTube • High Quality Audio/Video</button>
+            <button class="sample-chip" data-url="https://soundcloud.com/octobersveryown/drake-war">🟠 SoundCloud • Drake Single</button>
           </div>
         </div>
 
@@ -236,6 +494,18 @@
           </div>
         </div>
 
+        <!-- In-Content Native Ad Placement -->
+        <div class="ad-unit-content" id="ad-slot-content" data-ad-slot="content" aria-label="Sponsored In-Feed">
+          <div class="ad-card-native">
+            <div class="ad-native-left">
+              <span class="ad-pill">FEATURED PARTNER</span>
+              <div class="ad-native-title">Audiophile Master Studio Headphones</div>
+              <div class="ad-native-desc">Experience every detail of 24-bit 192kHz Hi-Res Lossless with studio reference acoustics.</div>
+            </div>
+            <a href="https://appllifymusic.netlify.app" class="btn-ad-pill">View Specs →</a>
+          </div>
+        </div>
+
         <!-- Album Container -->
         <div id="album-container" class="album-container hidden">
           <!-- Album Header -->
@@ -246,7 +516,7 @@
 
             <div class="album-details">
               <div class="album-type-label">ALBUM</div>
-              <h1 id="album-title" class="album-title"></h1>
+              <h2 id="album-title" class="album-title"></h2>
               <div id="album-artist" class="album-artist"></div>
               <div class="album-meta">
                 <span id="album-genre"></span>
@@ -333,6 +603,86 @@
             </div>
           </div>
         </div>
+
+        <!-- SEO FAQ Accordion Section (Boosts Search Ranking & User Trust) -->
+        <article class="faq-section" id="faq-section">
+          <div class="section-badge-center">
+            <span class="badge-pill">KNOWLEDGE BASE</span>
+          </div>
+          <h2 class="faq-headline">Frequently Asked Questions</h2>
+          <p class="faq-subhead">Everything you need to know about downloading lossless audio with Appllify Music.</p>
+
+          <div class="faq-accordion">
+            <details class="faq-item" open>
+              <summary class="faq-question">
+                <span>How do I download music in Lossless ALAC or Hi-Res 24-bit?</span>
+                <span class="faq-chevron">▾</span>
+              </summary>
+              <div class="faq-answer">
+                <p>Paste any Apple Music, Spotify, YouTube, or SoundCloud link into the top search bar. In the Audio Quality pill, choose <strong>Hi-Res Lossless</strong> (up to 24-bit/192kHz) or <strong>Lossless</strong> (ALAC 24-bit/48kHz). Click <strong>Fetch & Download</strong>, and your tracks will download bit-for-bit in studio master quality with original album art and synced lyrics embedded.</p>
+              </div>
+            </details>
+
+            <details class="faq-item">
+              <summary class="faq-question">
+                <span>What is the difference between ALAC and FLAC?</span>
+                <span class="faq-chevron">▾</span>
+              </summary>
+              <div class="faq-answer">
+                <p><strong>ALAC (Apple Lossless Audio Codec)</strong> is Apple's official lossless codec stored in standard <code>.m4a</code> files. It plays natively on macOS Music.app, iOS devices, Finder, and Safari without extra software. <strong>FLAC</strong> is the open-source audiophile standard. Both preserve 100% of the original studio recording without any quality loss.</p>
+              </div>
+            </details>
+
+            <details class="faq-item">
+              <summary class="faq-question">
+                <span>Can I download full albums or playlists in one click?</span>
+                <span class="faq-chevron">▾</span>
+              </summary>
+              <div class="faq-answer">
+                <p>Yes! Appllify Music fully supports complete album and playlist downloads. When you paste an album link, the complete tracklist loads instantly with individual song sizes. Clicking <strong>Download Album (1-Click)</strong> saves all songs into clean, organized artist and album folders.</p>
+              </div>
+            </details>
+
+            <details class="faq-item">
+              <summary class="faq-question">
+                <span>How do I use Appllify Music on my iPhone or Android device?</span>
+                <span class="faq-chevron">▾</span>
+              </summary>
+              <div class="faq-answer">
+                <p>Simply open <code>https://appllifymusic.netlify.app</code> on your phone. In Safari on iOS, tap <strong>Share → Add to Home Screen</strong>. On Android Chrome, tap the menu and select <strong>Install App</strong>. Appllify functions as a full-screen, native-feeling music app on mobile with touch controls and background streaming.</p>
+              </div>
+            </details>
+
+            <details class="faq-item">
+              <summary class="faq-question">
+                <span>Where are downloaded music and video files saved?</span>
+                <span class="faq-chevron">▾</span>
+              </summary>
+              <div class="faq-answer">
+                <p>Downloaded media is saved directly into your device's <code>~/Downloads/Apple Music/</code> folder organized by <code>Artist Name/Album Title/</code>. You can click <strong>Show in Finder</strong> at any time to open the folder directly.</p>
+              </div>
+            </details>
+          </div>
+        </article>
+
+        <!-- Appllify Footer -->
+        <footer class="appllify-footer">
+          <div class="footer-brand">
+            <span class="footer-logo">🎵</span>
+            <span class="footer-name">Appllify<span class="brand-accent">Music</span></span>
+            <span class="footer-tagline">— Studio Quality. Zero Limits. Offline Freedom.</span>
+          </div>
+          <div class="footer-links">
+            <a href="#view-downloader">Downloader</a>
+            <a href="#view-library">Offline Library</a>
+            <a href="#view-shows">Series & Movies</a>
+            <a href="#faq-section">FAQ & Guide</a>
+            <button id="btn-footer-settings" class="footer-link-btn">SEO & Ad Settings</button>
+          </div>
+          <div class="footer-copy">
+            © 2026 Appllify Music. All rights reserved. Designed for audiophiles worldwide.
+          </div>
+        </footer>
       </section>
 
       <!-- View: Shows & Movies by Part -->
@@ -408,21 +758,39 @@
         <div id="library-empty" class="welcome-card hidden">
           <div class="welcome-icon">💿</div>
           <h2>No offline albums downloaded yet</h2>
-          <p>Paste an Apple Music link in the Downloader tab and click Download to save your first album.</p>
+          <p>Paste an Apple Music, Spotify, or YouTube link in the Downloader tab and click Download to save your first album.</p>
         </div>
       </section>
     </main>
   </div>
 
-  <!-- Apple Music Style Bottom Player Bar -->
-  <footer class="player-bar">
+  <!-- Bottom Sticky Sponsor / Ad Strip -->
+  <aside class="ad-unit-bottom" id="ad-slot-bottom" data-ad-slot="bottom" aria-label="Audio Sponsor Banner">
+    <div class="ad-strip-fallback">
+      <span class="ad-pill">SPONSORED</span>
+      <span class="ad-strip-text">Upgrade your sound: Discover Studio Hi-Res Audiophile gear with bit-perfect reproduction.</span>
+      <a href="https://appllifymusic.netlify.app" class="ad-strip-btn">Explore →</a>
+    </div>
+  </aside>
+
+  <!-- Apple Music Style Bottom Player Bar with Equalizer -->
+  <footer class="player-bar" id="app-player-bar">
     <!-- Left: Track info -->
     <div class="player-track-info">
-      <img id="player-art" src="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23222%22/></svg>" alt="" class="player-thumbnail" />
+      <div class="player-art-container">
+        <img id="player-art" src="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23222%22/></svg>" alt="Album Cover" class="player-thumbnail" />
+        <!-- Equalizer animation overlay when playing -->
+        <div id="player-equalizer" class="equalizer-bars hidden" aria-hidden="true">
+          <span class="eq-bar eq-bar-1"></span>
+          <span class="eq-bar eq-bar-2"></span>
+          <span class="eq-bar eq-bar-3"></span>
+          <span class="eq-bar eq-bar-4"></span>
+        </div>
+      </div>
       <div class="player-titles">
         <div id="player-title" class="player-title">Not Playing</div>
         <div class="player-artist-line">
-          <span id="player-artist" class="player-artist">Apple Music Offline</span>
+          <span id="player-artist" class="player-artist">Appllify Music</span>
           <span id="player-quality-badge" class="player-quality-pill hidden">LOSSLESS</span>
         </div>
       </div>
@@ -484,7 +852,7 @@
         <span id="time-current" class="time-label">0:00</span>
         <div class="scrubber-container" id="scrubber-track">
           <div id="scrubber-fill" class="scrubber-fill" style="width: 0%"></div>
-          <input id="scrubber-input" type="range" min="0" max="100" value="0" step="0.1" class="scrubber-slider" />
+          <input id="scrubber-input" type="range" min="0" max="100" value="0" step="0.1" class="scrubber-slider" aria-label="Playback timeline scrubber" />
         </div>
         <span id="time-total" class="time-label">0:00</span>
       </div>
@@ -492,27 +860,72 @@
 
     <!-- Right: Volume & Lyrics button -->
     <div class="player-extra-controls">
-      <button id="btn-lyrics-toggle" class="player-icon-btn" title="Lyrics">
+      <button id="btn-lyrics-toggle" class="player-icon-btn" title="Karaoke Lyrics">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
         </svg>
       </button>
 
       <div class="volume-container">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" aria-hidden="true">
           <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
           <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
         </svg>
-        <input id="volume-slider" type="range" min="0" max="1" step="0.01" value="0.85" class="volume-slider" />
+        <input id="volume-slider" type="range" min="0" max="1" step="0.01" value="0.85" class="volume-slider" aria-label="Volume control" />
       </div>
     </div>
   </footer>
 
+  <!-- Mobile Bottom Tab Navigation (iOS / Android Native-Feel) -->
+  <nav class="mobile-bottom-nav" id="mobile-bottom-nav" aria-label="Mobile Navigation">
+    <button id="mobile-tab-downloader" class="mobile-nav-btn active" data-target="view-downloader">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+      </svg>
+      <span>Downloader</span>
+    </button>
+
+    <button id="mobile-tab-library" class="mobile-nav-btn" data-target="view-library">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+        <path d="M9 18V5l12-2v13"></path>
+        <circle cx="6" cy="18" r="3"></circle>
+        <circle cx="18" cy="16" r="3"></circle>
+      </svg>
+      <span>Library</span>
+    </button>
+
+    <button id="mobile-tab-shows" class="mobile-nav-btn" data-target="view-shows">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+        <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+        <line x1="7" y1="2" x2="7" y2="22"></line>
+        <line x1="17" y1="2" x2="17" y2="22"></line>
+        <line x1="2" y1="12" x2="22" y2="12"></line>
+      </svg>
+      <span>Series</span>
+    </button>
+
+    <button id="mobile-tab-share" class="mobile-nav-btn" id="btn-mobile-share-nav">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+        <circle cx="18" cy="5" r="3"></circle>
+        <circle cx="6" cy="12" r="3"></circle>
+        <circle cx="18" cy="19" r="3"></circle>
+        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+      </svg>
+      <span>Remote</span>
+    </button>
+  </nav>
+
   <!-- Slide-out Frosted Lyrics Pane -->
   <div id="lyrics-pane" class="lyrics-pane hidden">
     <div class="lyrics-header">
-      <span class="lyrics-title">Lyrics</span>
-      <button id="btn-close-lyrics" class="btn-icon">
+      <div class="lyrics-title-group">
+        <span class="lyrics-icon">🎤</span>
+        <span class="lyrics-title">Karaoke Lyrics</span>
+      </div>
+      <button id="btn-close-lyrics" class="btn-icon" aria-label="Close Lyrics">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
           <line x1="18" y1="6" x2="6" y2="18"></line>
           <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -525,14 +938,14 @@
   </div>
 
   <!-- Modal: Share From Anywhere -->
-  <div id="share-modal" class="modal-backdrop hidden">
+  <div id="share-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="share-modal-title">
     <div class="modal-card">
       <div class="modal-header">
         <div class="modal-title-group">
           <span class="modal-icon">📲</span>
-          <h3>Share & Download From Anywhere</h3>
+          <h3 id="share-modal-title">Share & Download From Anywhere</h3>
         </div>
-        <button id="btn-close-share-modal" class="btn-icon">
+        <button id="btn-close-share-modal" class="btn-icon" aria-label="Close Share Modal">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -551,9 +964,9 @@
             </div>
           </div>
           <div class="share-url-box">
-            <input id="worldwide-url-input" type="text" readonly value="Connecting worldwide tunnel..." />
+            <input id="worldwide-url-input" type="text" readonly value="Connecting worldwide tunnel..." aria-label="Worldwide URL" />
             <button id="btn-copy-worldwide-url" class="btn-primary">Copy Link</button>
-            <a id="link-test-worldwide" href="#" target="_blank" class="btn-secondary link-btn">Open</a>
+            <a id="link-test-worldwide" href="#" target="_blank" rel="noopener" class="btn-secondary link-btn">Open</a>
           </div>
           <div class="tip-box">
             🌐 <strong>Truly Anywhere:</strong> Send links to this address from any phone, computer, or browser in the world. It will download straight into your home Mac's Finder!
@@ -570,12 +983,12 @@
             </div>
           </div>
           <div class="share-url-box">
-            <input id="mobile-url-input" type="text" readonly value="http://10.221.199.49:3300" />
+            <input id="mobile-url-input" type="text" readonly value="http://10.221.199.49:3300" aria-label="Mobile Local URL" />
             <button id="btn-copy-mobile-url" class="btn-secondary">Copy</button>
-            <a id="link-test-mobile" href="http://10.221.199.49:3300" target="_blank" class="btn-secondary link-btn">Open</a>
+            <a id="link-test-mobile" href="http://10.221.199.49:3300" target="_blank" rel="noopener" class="btn-secondary link-btn">Open</a>
           </div>
           <div class="tip-box">
-            💡 <strong>Pro-tip:</strong> In Safari on your iPhone, tap <strong>Share</strong> (square with arrow) → <strong>"Add to Home Screen"</strong>. It installs as a real Apple Music app on your phone!
+            💡 <strong>Pro-tip:</strong> In Safari on your iPhone, tap <strong>Share</strong> → <strong>"Add to Home Screen"</strong>. It installs as a real Apple Music app on your phone!
           </div>
         </div>
 
@@ -603,8 +1016,126 @@
     </div>
   </div>
 
+  <!-- Modal: Monetization & Google Search Console Settings -->
+  <div id="monetization-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span class="modal-icon">⚙️</span>
+          <h3 id="settings-modal-title">Appllify Ads & Google Search Console Manager</h3>
+        </div>
+        <button id="btn-close-monetization-modal" class="btn-icon" aria-label="Close Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Google Search Console Section -->
+        <div class="share-option-card highlight-card">
+          <div class="share-option-header">
+            <div class="option-icon">🔍</div>
+            <div>
+              <h4>Google Search Console Verification</h4>
+              <p>Verify your ownership on Google Search Console to index your site on Google Search:</p>
+            </div>
+          </div>
+          <div class="settings-form-group">
+            <label for="gsc-token-input">HTML Tag Verification Code (from Google Search Console):</label>
+            <div class="input-with-button">
+              <input id="gsc-token-input" type="text" placeholder="e.g. google-site-verification code or full meta tag..." />
+              <button id="btn-save-gsc" class="btn-primary">Save Code</button>
+            </div>
+            <p class="settings-help">
+              1. Go to <a href="https://search.google.com/search-console" target="_blank" rel="noopener">search.google.com/search-console</a>.<br>
+              2. Add Property: <code>https://appllifymusic.netlify.app</code>.<br>
+              3. Choose <strong>HTML Tag</strong> verification method, copy the code and paste it above.<br>
+              4. Submit your sitemap: <code>https://appllifymusic.netlify.app/sitemap.xml</code>.
+            </p>
+          </div>
+        </div>
+
+        <!-- Google AdSense & Ads Monetization Section -->
+        <div class="share-option-card">
+          <div class="share-option-header">
+            <div class="option-icon">💰</div>
+            <div>
+              <h4>Google AdSense & Ad Monetization</h4>
+              <p>Monetize your site traffic with Google AdSense or custom ad networks:</p>
+            </div>
+          </div>
+          <div class="settings-form-group">
+            <label for="adsense-client-input">Google AdSense Publisher ID:</label>
+            <div class="input-with-button">
+              <input id="adsense-client-input" type="text" placeholder="ca-pub-XXXXXXXXXXXXXXXX" />
+              <button id="btn-save-adsense" class="btn-primary">Apply ID</button>
+            </div>
+            <p class="settings-help">
+              Enter your AdSense Publisher ID to automatically activate ads across all header, sidebar, and in-feed units.<br>
+              When AdSense is unconfigured or blocked, Appllify automatically shows sleek non-intrusive sponsor cards so your UI stays gorgeous!
+            </p>
+          </div>
+        </div>
+
+        <!-- Backend Server Override Section -->
+        <div class="share-option-card">
+          <div class="share-option-header">
+            <div class="option-icon">🖥️</div>
+            <div>
+              <h4>Connected Mac Backend Server</h4>
+              <p>Current active backend for downloads and streaming:</p>
+            </div>
+          </div>
+          <div class="settings-form-group">
+            <div class="input-with-button">
+              <input id="custom-backend-input" type="text" placeholder="https://spleen-uniformly-seminar.ngrok-free.dev" />
+              <button id="btn-save-backend" class="btn-secondary">Save URL</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Keyboard Shortcuts -->
+  <div id="shortcuts-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="shortcuts-title">
+    <div class="modal-card mini-card">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span class="modal-icon">⌨️</span>
+          <h3 id="shortcuts-title">Keyboard Shortcuts</h3>
+        </div>
+        <button id="btn-close-shortcuts" class="btn-icon" aria-label="Close Shortcuts">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="shortcuts-grid">
+          <div class="shortcut-row"><span class="shortcut-desc">Play / Pause</span><kbd class="shortcut-key">Space</kbd></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Next Track</span><kbd class="shortcut-key">Cmd + →</kbd></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Previous Track</span><kbd class="shortcut-key">Cmd + ←</kbd></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Seek Forward 5s</span><kbd class="shortcut-key">→</kbd></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Seek Backward 5s</span><kbd class="shortcut-key">←</kbd></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Mute / Unmute</span><kbd class="shortcut-key">M</kbd></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Toggle Karaoke Lyrics</span><kbd class="shortcut-key">L</kbd></div>
+          <div class="shortcut-row"><span class="shortcut-desc">Focus Search Input</span><kbd class="shortcut-key">/</kbd></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- HTML5 Audio Engine for Bit-Perfect Streaming -->
   <audio id="audio-engine" preload="auto"></audio>
 
+  <!-- Appllify Application Script -->
   <script src="app.js"></script>
 </body>
 </html>

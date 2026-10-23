@@ -23,6 +23,40 @@ if (!fs.existsSync(DOWNLOADS_DIR)) {
   fs.mkdirSync(DOWNLOADS_DIR, { recursive: true });
 }
 
+// Security Headers Middleware
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
+// SSRF Protection & Safe URL Validator
+function isSafeUrl(inputUrl) {
+  if (!inputUrl || typeof inputUrl !== 'string') return false;
+  try {
+    const parsed = new URL(inputUrl.trim());
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
+    const hostname = parsed.hostname.toLowerCase();
+    if (
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname === '::1' ||
+      hostname === '0.0.0.0' ||
+      hostname.startsWith('192.168.') ||
+      hostname.startsWith('10.') ||
+      hostname.startsWith('169.254.') ||
+      hostname.endsWith('.local')
+    ) {
+      return false;
+    }
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
@@ -183,8 +217,8 @@ app.get('/api/network-info', (req, res) => {
 // Universal Link Inspector (Apple Music, Spotify, YouTube, Instagram, SoundCloud, etc.)
 app.post('/api/inspect-link', async (req, res) => {
   const { url } = req.body;
-  if (!url || typeof url !== 'string') {
-    return res.status(400).json({ error: 'Please provide a valid URL.' });
+  if (!url || typeof url !== 'string' || !isSafeUrl(url)) {
+    return res.status(400).json({ error: 'Please provide a valid and safe URL (HTTP/HTTPS).' });
   }
 
   try {
@@ -199,8 +233,8 @@ app.post('/api/inspect-link', async (req, res) => {
 // Fetch album/media metadata (supports Apple Music, Spotify, & universal links)
 app.post('/api/fetch-album', async (req, res) => {
   const { url } = req.body;
-  if (!url || typeof url !== 'string') {
-    return res.status(400).json({ error: 'Please provide a valid URL.' });
+  if (!url || typeof url !== 'string' || !isSafeUrl(url)) {
+    return res.status(400).json({ error: 'Please provide a valid and safe URL (HTTP/HTTPS).' });
   }
 
   try {
@@ -387,8 +421,8 @@ app.all('/api/quick-download', async (req, res) => {
   const requestedQuality = req.query.quality || req.body?.quality || 'lossless';
   const requestedCodec = req.query.codec || req.body?.codec || 'alac';
 
-  if (!url || typeof url !== 'string') {
-    return res.status(400).json({ error: 'Please provide a valid URL via ?url=' });
+  if (!url || typeof url !== 'string' || !isSafeUrl(url)) {
+    return res.status(400).json({ error: 'Please provide a valid, safe HTTP/HTTPS URL via ?url=' });
   }
 
   try {

@@ -1,7 +1,7 @@
 {
-  "name": "music-local-backup-assistant",
-  "version": "1.0.0",
-  "description": "Apple Music Downloader and Offline Player with Lossless & Hi-Res Lossless Support",
+  "name": "appllify-music",
+  "version": "2.5.0",
+  "description": "Appllify Music • Studio Lossless & Hi-Res Music Downloader & Player for Apple Music, Spotify, YouTube and SoundCloud.",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",

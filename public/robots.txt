@@ -1,0 +1,8 @@
+# Appllify Music - Robots.txt
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+
+# Google Search Console & Search Engine Sitemaps
+Sitemap: https://appllifymusic.netlify.app/sitemap.xml

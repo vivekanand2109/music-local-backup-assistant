@@ -1067,6 +1067,12 @@ function setPlayingState(playing) {
     iconPlay.classList.remove('hidden');
     iconPause.classList.add('hidden');
   }
+
+  const playerEqualizer = document.getElementById('player-equalizer');
+  if (playerEqualizer) {
+    if (playing) playerEqualizer.classList.remove('hidden');
+    else playerEqualizer.classList.add('hidden');
+  }
 }
 
 btnPlayPause.addEventListener('click', () => {
@@ -1262,6 +1268,11 @@ async function loadOfflineLibrary() {
     const res = await fetch(apiUrl('/api/library'));
     const data = await res.json();
 
+    const navLibCount = document.getElementById('nav-library-count');
+    if (navLibCount && data.albums) {
+      navLibCount.textContent = data.albums.length;
+    }
+
     if (!data.albums || data.albums.length === 0) {
       libraryEmpty.classList.remove('hidden');
       libraryGrid.innerHTML = '';
@@ -1355,3 +1366,207 @@ if (headerCodecSelect) {
 
 // Initial sync
 setAudioQuality(currentAudioQuality, currentAudioCodec);
+
+
+// ============================================================
+// Appllify Music: Toasts, Mobile Tabs, SEO & Ads Manager
+// ============================================================
+
+// Toast Notification System
+function showToast(message, icon = '✓') {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+  const toast = document.createElement('div');
+  toast.className = 'toast-message';
+  toast.innerHTML = `<span style="color:#FC3C44;font-size:16px;">${icon}</span><span>${message}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(10px) scale(0.95)';
+    toast.style.transition = 'all 0.3s ease';
+    setTimeout(() => toast.remove(), 300);
+  }, 3500);
+}
+
+// Google Search Console & AdSense Monetization Manager
+function initMonetizationAndSeo() {
+  const savedGsc = localStorage.getItem('gsc_verification_token');
+  const gscInput = document.getElementById('gsc-token-input');
+  const gscMeta = document.getElementById('gsc-meta-tag');
+
+  if (savedGsc) {
+    if (gscInput) gscInput.value = savedGsc;
+    if (gscMeta) gscMeta.setAttribute('content', savedGsc);
+  }
+
+  const btnSaveGsc = document.getElementById('btn-save-gsc');
+  if (btnSaveGsc && gscInput) {
+    btnSaveGsc.addEventListener('click', () => {
+      let val = gscInput.value.trim();
+      const match = val.match(/content=["']([^"']+)["']/i);
+      if (match) val = match[1];
+
+      localStorage.setItem('gsc_verification_token', val);
+      if (gscMeta) gscMeta.setAttribute('content', val);
+      showToast('Google Search Console verification code saved!', '🔍');
+    });
+  }
+
+  // AdSense Publisher ID Manager
+  const savedAdSense = localStorage.getItem('adsense_pub_id');
+  const adInput = document.getElementById('adsense-client-input');
+  const adScript = document.getElementById('google-adsense-script');
+
+  if (savedAdSense) {
+    if (adInput) adInput.value = savedAdSense;
+    if (adScript) adScript.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${savedAdSense}`;
+  }
+
+  const btnSaveAdSense = document.getElementById('btn-save-adsense');
+  if (btnSaveAdSense && adInput) {
+    btnSaveAdSense.addEventListener('click', () => {
+      let val = adInput.value.trim();
+      if (!val) return;
+      if (!val.startsWith('ca-pub-') && !val.startsWith('pub-')) {
+        val = `ca-pub-${val}`;
+      }
+      localStorage.setItem('adsense_pub_id', val);
+      if (adScript) adScript.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${val}`;
+      showToast('Google AdSense Publisher ID updated!', '💰');
+    });
+  }
+
+  // Backend URL Manager
+  const savedBackend = localStorage.getItem('custom_backend_url');
+  const backendInput = document.getElementById('custom-backend-input');
+  if (backendInput) {
+    backendInput.value = savedBackend || PERMANENT_BACKEND;
+  }
+  const btnSaveBackend = document.getElementById('btn-save-backend');
+  if (btnSaveBackend && backendInput) {
+    btnSaveBackend.addEventListener('click', () => {
+      const val = backendInput.value.trim();
+      if (val) {
+        localStorage.setItem('custom_backend_url', val);
+        showToast('Backend server URL saved!', '🖥️');
+      } else {
+        localStorage.removeItem('custom_backend_url');
+        showToast('Reset to default backend.', 'ℹ️');
+      }
+    });
+  }
+}
+
+// Monetization & GSC Settings Modal
+const monetizationModal = document.getElementById('monetization-modal');
+const btnOpenMonetization = document.getElementById('btn-open-monetization-modal');
+const btnCloseMonetization = document.getElementById('btn-close-monetization-modal');
+const btnFooterSettings = document.getElementById('btn-footer-settings');
+const btnMobileSettings = document.getElementById('btn-mobile-settings-header');
+
+[btnOpenMonetization, btnFooterSettings, btnMobileSettings].forEach(btn => {
+  btn?.addEventListener('click', () => monetizationModal?.classList.remove('hidden'));
+});
+btnCloseMonetization?.addEventListener('click', () => monetizationModal?.classList.add('hidden'));
+
+// Keyboard Shortcuts Modal
+const shortcutsModal = document.getElementById('shortcuts-modal');
+const btnOpenShortcuts = document.getElementById('btn-open-shortcuts');
+const btnCloseShortcuts = document.getElementById('btn-close-shortcuts');
+
+btnOpenShortcuts?.addEventListener('click', () => shortcutsModal?.classList.remove('hidden'));
+btnCloseShortcuts?.addEventListener('click', () => shortcutsModal?.classList.add('hidden'));
+
+// Dismiss top announcement banner
+const topBanner = document.getElementById('appllify-top-banner');
+const btnCloseBanner = document.getElementById('btn-close-top-banner');
+btnCloseBanner?.addEventListener('click', () => {
+  topBanner?.remove();
+  localStorage.setItem('appllify_banner_dismissed', 'true');
+});
+if (localStorage.getItem('appllify_banner_dismissed') === 'true') {
+  topBanner?.remove();
+}
+
+// Mobile Bottom Navigation Tabs
+const mobileTabs = document.querySelectorAll('.mobile-nav-btn[data-target]');
+mobileTabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    mobileTabs.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+
+    const targetId = tab.dataset.target;
+    document.querySelectorAll('.view-section').forEach(view => {
+      if (view.id === targetId) {
+        view.classList.remove('hidden');
+        view.classList.add('active');
+      } else {
+        view.classList.add('hidden');
+        view.classList.remove('active');
+      }
+    });
+
+    // Also sync desktop sidebar active state
+    document.querySelectorAll('.nav-item').forEach(item => {
+      if (
+        (targetId === 'view-downloader' && item.id === 'nav-downloader') ||
+        (targetId === 'view-library' && item.id === 'nav-library') ||
+        (targetId === 'view-shows' && item.id === 'nav-shows')
+      ) {
+        item.classList.add('active');
+      } else {
+        item.classList.remove('active');
+      }
+    });
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+});
+
+const btnMobileShareNav = document.getElementById('mobile-tab-share');
+const btnMobileShareHeader = document.getElementById('btn-mobile-share-header');
+[btnMobileShareNav, btnMobileShareHeader].forEach(btn => {
+  btn?.addEventListener('click', () => shareModal?.classList.remove('hidden'));
+});
+
+// Keyboard Shortcuts Global Listener
+window.addEventListener('keydown', (e) => {
+  if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
+    return;
+  }
+
+  if (e.code === 'Space') {
+    e.preventDefault();
+    btnPlayPause.click();
+  } else if (e.code === 'ArrowRight' && (e.metaKey || e.ctrlKey)) {
+    e.preventDefault();
+    btnNext.click();
+  } else if (e.code === 'ArrowLeft' && (e.metaKey || e.ctrlKey)) {
+    e.preventDefault();
+    btnPrev.click();
+  } else if (e.code === 'ArrowRight') {
+    e.preventDefault();
+    if (audioEngine) audioEngine.currentTime = Math.min(audioEngine.duration || 0, audioEngine.currentTime + 5);
+  } else if (e.code === 'ArrowLeft') {
+    e.preventDefault();
+    if (audioEngine) audioEngine.currentTime = Math.max(0, audioEngine.currentTime - 5);
+  } else if (e.key === 'm' || e.key === 'M') {
+    e.preventDefault();
+    if (audioEngine) {
+      audioEngine.muted = !audioEngine.muted;
+      showToast(audioEngine.muted ? 'Muted' : 'Unmuted', '🔊');
+    }
+  } else if (e.key === 'l' || e.key === 'L') {
+    e.preventDefault();
+    btnLyricsToggle.click();
+  } else if (e.key === '/') {
+    e.preventDefault();
+    urlInput.focus();
+  } else if (e.key === '?') {
+    e.preventDefault();
+    shortcutsModal?.classList.toggle('hidden');
+  }
+});
+
+// Initialize on load
+initMonetizationAndSeo();

@@ -1,0 +1,19 @@
+{
+  "name": "Appllify Music • Lossless Music Downloader & Player",
+  "short_name": "Appllify",
+  "description": "Studio-grade Lossless ALAC & Hi-Res Music Downloader and Player for Apple Music, Spotify, YouTube and SoundCloud.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0c",
+  "theme_color": "#000000",
+  "orientation": "portrait-primary",
+  "categories": ["music", "entertainment", "utilities"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%23FC3C44'/><stop offset='50%25' stop-color='%23F92A54'/><stop offset='100%25' stop-color='%239B51E0'/></linearGradient></defs><rect width='512' height='512' rx='128' fill='%230a0a0c'/><circle cx='256' cy='256' r='180' fill='url(%23g)' opacity='0.15'/><path d='M340 160v150a50 50 0 1 1-40-49V200l-120 28v112a50 50 0 1 1-40-49V160l200-40z' fill='url(%23g)'/></svg>",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

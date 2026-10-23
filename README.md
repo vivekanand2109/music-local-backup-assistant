@@ -1,82 +1,69 @@
-# 🍎 Apple Music 1-Click Offline Downloader & Player
+# 🎵 Appllify Music
+### The Ultimate Lossless & Hi-Res Music Downloader & Player
+**Studio Quality. Zero Limits. Offline Freedom.**
 
-A modern offline music application that brings the **Apple Music macOS experience** directly to your Mac. Paste any Apple Music share link to download the entire album in 1-click, complete with:
-- 🎶 **Original Apple Music Metadata**: Song titles, artist, album name, year, genre, track numbering, disc numbering.
-- 🖼️ **Ultra-HD Album Art**: 3000x3000px official Apple Music cover art embedded directly inside every audio file.
-- 🎤 **Real-time Synced Lyrics**: Embedded ID3 lyrics and `.lrc` files with karaoke-style highlighting.
-- 🎧 **Offline Apple Music Player**: Built-in glassmorphism web player with scrubber, queue, lyrics drawer, shuffle & repeat.
-- 📂 **Apple Music / iTunes Integration**: Drag-and-drop downloaded albums straight into macOS **Music.app**.
-
----
-
-## 🚀 How to Use
-
-### Method 1: The Apple Music Web App (Recommended)
-
-1. Open your terminal and run:
-   ```bash
-   cd /Users/vivekanand/Documents/anti/apple-music-downloader
-   ./start.sh
-   ```
-   *(Or simply run `npm start`)*
-
-2. Your browser will open **http://localhost:3300** with the Apple Music interface.
-3. Paste any Apple Music link (e.g. `https://music.apple.com/us/album/...`).
-4. Click **"Download Album (1-Click)"**!
-5. Enjoy listening offline in the built-in player or click **"Show in Finder"** to open your downloaded music files!
+[![Website](https://img.shields.io/badge/Live-appllifymusic.netlify.app-FC3C44?style=for-the-badge&logo=netlify)](https://appllifymusic.netlify.app)
+[![Audio Quality](https://img.shields.io/badge/Audio-24--bit%20%2F%20192kHz%20Lossless-FFD60A?style=for-the-badge)](https://appllifymusic.netlify.app)
+[![Platforms](https://img.shields.io/badge/Platforms-Apple%20Music%20%7C%20Spotify%20%7C%20YouTube-1DB954?style=for-the-badge)](https://appllifymusic.netlify.app)
 
 ---
 
-### Method 2: Terminal 1-Click Command (CLI)
+## ✨ Features
 
-You can also download directly from the command line:
+- 💎 **Studio Master Lossless Audio**: Download in bit-for-bit **ALAC (Apple Lossless)** or **FLAC** up to **24-bit / 192 kHz**, or universal **320 kbps MP3**.
+- 🎶 **Original Apple Music & Spotify Metadata**: Automatic tagging of song titles, artist, album name, year, genre, track numbering, and disc numbering.
+- 🖼️ **Ultra-HD Album Art**: 3000x3000px official studio cover art embedded directly inside every audio file.
+- 🎤 **Synchronized Karaoke Lyrics**: Embedded ID3 lyrics and synchronized `.lrc` karaoke files with real-time highlighting.
+- 🎧 **Built-in Apple Music Player**: Liquid dark glassmorphic web player with scrubber, queue, lyrics drawer, and live sound equalizer.
+- 📱 **Mobile & PWA Ready**: Fully responsive iOS & Android experience. Tap **"Add to Home Screen"** in Safari or Chrome to install as a native app.
+- 🌍 **Worldwide Remote Download**: Send links from your phone, laptop, or shortcuts anywhere in the world and download straight into your home Mac's Finder!
+- 🔍 **SEO & Google Search Console Ready**: Includes Schema.org JSON-LD (WebApplication & FAQPage), XML Sitemap (`/sitemap.xml`), and `robots.txt`.
+- 💰 **Google AdSense & Monetization Ready**: Built-in responsive ad slots (Header, In-Feed, Sidebar, Sticky Bottom) with graceful Apple-style sponsor fallbacks.
 
+---
+
+## 🚀 Getting Started
+
+### 1. Run Locally
 ```bash
-cd /Users/vivekanand/Documents/anti/apple-music-downloader
-node download.js "https://music.apple.com/us/album/1989-taylors-version-deluxe/1713845538"
+cd apple-music-downloader
+npm install
+./start.sh
 ```
+Open **http://localhost:3300** in your browser.
+
+### 2. Live Worldwide Deployment
+- **Web App**: [https://appllifymusic.netlify.app](https://appllifymusic.netlify.app)
+- **Permanent Tunnel Backend**: `https://spleen-uniformly-seminar.ngrok-free.dev`
 
 ---
 
-## 📁 Download Directory Structure
+## ⚙️ Google Search Console & AdSense Setup
 
-Downloaded music is saved directly in your Mac Finder **Downloads** folder:
-
-```
-~/Downloads/Apple Music/
-└── <Artist Name>/
-    └── <Album Title>/
-        ├── cover.jpg               (3000x3000px Ultra HD Album Art)
-        ├── Song Title.mp3          (Tagged with ID3v2 + Embedded Cover + Lyrics)
-        ├── Song Title.lrc          (Synced Karaoke Lyrics)
-        └── Another Song Title.mp3
-```
+1. Click the **⚙️ Ad & Console Settings** button in the top banner or footer.
+2. **Google Search Console**:
+   - Go to [search.google.com/search-console](https://search.google.com/search-console).
+   - Add property `https://appllifymusic.netlify.app`.
+   - Copy your HTML Tag verification code and paste it into Appllify Settings.
+   - Submit your sitemap: `https://appllifymusic.netlify.app/sitemap.xml`.
+3. **Google AdSense**:
+   - Paste your Publisher ID (`ca-pub-XXXXXXXXXXXXXXXX`) in Appllify Settings to activate monetization.
 
 ---
 
+## ⌨️ Keyboard Shortcuts
+
+| Shortcut | Action |
+| :--- | :--- |
+| `Space` | Play / Pause |
+| `Cmd + →` | Next Track |
+| `Cmd + ←` | Previous Track |
+| `→` / `←` | Seek Forward / Backward 5 seconds |
+| `M` | Mute / Unmute Audio |
+| `L` | Toggle Karaoke Lyrics Drawer |
+| `/` | Focus Link Input |
+| `?` | Show Keyboard Shortcuts Modal |
+
 ---
 
-## 📲 Share & Download From Anywhere
-
-You can send songs and albums to your Mac from **any device or app**:
-
-### 1. Universal Clipboard (Instant Magic on iPhone & Mac)
-If your iPhone and Mac share the same Apple ID:
-1. In the **Apple Music app on iPhone**, tap **Share → Copy Link**.
-2. Within seconds, your Mac automatically detects the link from your clipboard, displays a macOS notification, and downloads the album straight into Finder without you clicking anything!
-3. To toggle this feature, click **"Auto-Download"** at the top of the web app.
-
-### 2. From Your Phone (iPhone / Android)
-1. Make sure your phone is connected to the same Wi-Fi network.
-2. Open Safari or Chrome on your phone and go to:
-   ```text
-   http://10.221.199.49:3300
-   ```
-3. *(Optional)* Tap **Share → "Add to Home Screen"** on iPhone. It installs as a real Apple Music app on your phone!
-4. Paste any link on your phone and tap Download — it downloads directly onto your Mac at home!
-
-### 3. Apple Shortcuts (iOS Share Sheet)
-Create a quick shortcut in the **Shortcuts app** on iPhone:
-- **Shortcut Input:** Apple Music URL
-- **Action:** Get Contents of `http://10.221.199.49:3300/api/quick-download?url=[Shortcut Input]`
-- Whenever you tap **Share** on any song or album in Apple Music, pick your shortcut to send it straight to your Mac's Finder!
+© 2026 Appllify Music. All rights reserved.
