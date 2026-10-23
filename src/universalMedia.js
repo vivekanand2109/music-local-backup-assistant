@@ -1,3 +1,7 @@
+const dns = require('dns');
+if (dns && dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first');
+}
 const { spawn } = require('child_process');
 const path = require('path');
 const { fetchAppleMusicAlbum } = require('./appleMusic');
@@ -27,6 +31,8 @@ function detectPlatform(rawUrl) {
   const url = (rawUrl || '').trim();
   if (/music\.apple\.com/i.test(url)) return 'apple_music';
   if (/open\.spotify\.com/i.test(url)) return 'spotify';
+  if (/jiosaavn\.com|saavn\.com/i.test(url)) return 'jiosaavn';
+  if (/gaana\.com/i.test(url)) return 'gaana';
   if (/youtube\.com|youtu\.be/i.test(url)) return 'youtube';
   if (/instagram\.com/i.test(url)) return 'instagram';
   if (/soundcloud\.com/i.test(url)) return 'soundcloud';
@@ -180,6 +186,14 @@ function resolveWithYtDlp(url) {
           platform = 'youtube';
           platformName = 'YouTube';
           platformIcon = '🔴';
+        } else if (extractor.includes('jiosaavn') || extractor.includes('saavn')) {
+          platform = 'jiosaavn';
+          platformName = 'JioSaavn';
+          platformIcon = '🟢';
+        } else if (extractor.includes('gaana')) {
+          platform = 'gaana';
+          platformName = 'Gaana';
+          platformIcon = '🔴';
         } else if (extractor.includes('soundcloud')) {
           platform = 'soundcloud';
           platformName = 'SoundCloud';
@@ -295,6 +309,134 @@ function resolveWithYtDlp(url) {
   });
 }
 
+async function resolveGaana(url) {
+  try {
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+      }
+    });
+
+    if (res.ok) {
+      const html = await res.text();
+      const titleMatch = html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i) || html.match(/<title>([^<]+)<\/title>/i);
+      const imgMatch = html.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i);
+      const descMatch = html.match(/<meta\s+property=["']og:description["']\s+content=["']([^"']+)["']/i);
+
+      let title = titleMatch ? titleMatch[1].replace(/Song Download:.*$/i, '').replace(/MP3 Song.*$/i, '').replace(/\|.*$/i, '').trim() : 'Gaana Song';
+      let artist = 'Gaana Artist';
+      if (descMatch) {
+        const artistMatch = descMatch[1].match(/(?:by|sung by|artist[s]?[:\s]+)([^,.]+)/i);
+        if (artistMatch) artist = artistMatch[1].trim();
+      }
+
+      const artwork = imgMatch ? imgMatch[1] : null;
+      const isPlaylist = /playlist|album/i.test(url);
+
+      return {
+        platform: 'gaana',
+        platformName: 'Gaana',
+        platformIcon: '🔴',
+        type: isPlaylist ? 'playlist' : 'track',
+        id: `gaana_${Date.now()}`,
+        title: title,
+        artist: artist,
+        artwork: artwork,
+        durationMs: 210000,
+        durationString: '3:30',
+        url: url,
+        searchQuery: `${artist} - ${title} audio`,
+        mediaFormats: ['mp3'],
+        sizeFormatted: '~8.4 MB',
+        estimatedSizes: { mp3: '~8.4 MB' }
+      };
+    }
+  } catch (err) {
+    console.warn('Gaana scrape fallback:', err.message);
+  }
+
+  // Fallback to yt-dlp
+  return await resolveWithYtDlp(url);
+}
+
+async function resolveJioSaavn(url) {
+  try {
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+      }
+    });
+
+    if (res.ok) {
+      const html = await res.text();
+      const titleMatch = html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i) || html.match(/<title>([^<]+)<\/title>/i);
+      const imgMatch = html.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i);
+      const descMatch = html.match(/<meta\s+property=["']og:description["']\s+content=["']([^"']+)["']/i);
+
+      let title = 'JioSaavn Track';
+      let artist = 'JioSaavn Artist';
+      let album = 'JioSaavn';
+
+      if (titleMatch) {
+        let rawTitle = titleMatch[1];
+        rawTitle = rawTitle.replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, '&');
+        const parts = rawTitle.split(/ - | @ /);
+        title = parts[0].replace(/\(Full Song\)/i, '').trim();
+        if (parts.length > 1) {
+          album = parts[1].replace(/Song Download from/i, '').replace(/Download or Listen Free/i, '').trim();
+        }
+      }
+
+      // Prioritize meta name="description" which has "song by Pritam, Arijit Singh... from"
+      const metaDescMatch = html.match(/<meta\s+name=["']description["']\s+content=["']([^"']+)["']/i);
+      if (metaDescMatch) {
+        let mDesc = metaDescMatch[1].replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, '&');
+        const songByMatch = mDesc.match(/song by\s+([^from]+?)\s+from/i);
+        if (songByMatch) {
+          artist = songByMatch[1].trim();
+        }
+      } else if (descMatch) {
+        let desc = descMatch[1].replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, '&');
+        const artistMatch = desc.match(/song by\s+([^from]+?)\s+from/i) || desc.match(/(?:by|sung by|singers?[:\s]+)([^,.]+)/i);
+        if (artistMatch) artist = artistMatch[1].trim();
+      }
+
+      let artwork = imgMatch ? imgMatch[1] : null;
+      if (artwork && artwork.includes('150x150')) {
+        artwork = artwork.replace('150x150', '500x500');
+      }
+
+      const isPlaylist = /playlist|album/i.test(url);
+
+      return {
+        platform: 'jiosaavn',
+        platformName: 'JioSaavn',
+        platformIcon: '🟢',
+        type: isPlaylist ? 'playlist' : 'track',
+        id: `jiosaavn_${Date.now()}`,
+        title: title,
+        artist: artist,
+        album: album,
+        artwork: artwork,
+        durationMs: 240000,
+        durationString: '4:00',
+        url: url,
+        searchQuery: `${artist} - ${title} audio`,
+        mediaFormats: ['mp3'],
+        sizeFormatted: '~9.6 MB',
+        estimatedSizes: { mp3: '~9.6 MB' }
+      };
+    }
+  } catch (err) {
+    console.warn('JioSaavn scrape fallback:', err.message);
+  }
+
+  // Fallback to yt-dlp
+  return await resolveWithYtDlp(url);
+}
+
 async function inspectUniversalUrl(rawUrl) {
   const url = (rawUrl || '').trim();
   if (!url) throw new Error('Please provide a URL to inspect.');
@@ -348,7 +490,15 @@ async function inspectUniversalUrl(rawUrl) {
     return await resolveSpotify(url);
   }
 
-  // All other platforms: YouTube, SoundCloud, Instagram, Twitter/X, TikTok, Generic
+  if (platform === 'jiosaavn') {
+    return await resolveJioSaavn(url);
+  }
+
+  if (platform === 'gaana') {
+    return await resolveGaana(url);
+  }
+
+  // All other platforms: JioSaavn, YouTube, SoundCloud, Instagram, Twitter/X, TikTok, Generic
   return await resolveWithYtDlp(url);
 }
 

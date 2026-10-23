@@ -98,6 +98,11 @@ function setAudioQuality(quality, codec) {
     btn.classList.toggle('active', btn.dataset.singleQuality === currentAudioQuality);
   });
 
+  // Sync confirm modal quality buttons
+  document.querySelectorAll('.btn-quality-chip[data-confirm-quality]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.confirmQuality === currentAudioQuality);
+  });
+
   // Sync codec dropdown
   const codecSelect = document.getElementById('header-codec-select');
   if (codecSelect) codecSelect.value = currentAudioCodec;
@@ -142,10 +147,14 @@ function setAudioQuality(quality, codec) {
   });
 }
 
+const navHome = document.getElementById('nav-home');
 const navDownloader = document.getElementById('nav-downloader');
 const navLibrary = document.getElementById('nav-library');
+const navShows = document.getElementById('nav-shows');
+const viewHome = document.getElementById('view-home');
 const viewDownloader = document.getElementById('view-downloader');
 const viewLibrary = document.getElementById('view-library');
+const viewShows = document.getElementById('view-shows');
 const libraryGrid = document.getElementById('library-grid');
 const libraryEmpty = document.getElementById('library-empty');
 const btnRefreshLibrary = document.getElementById('btn-refresh-library');
@@ -202,20 +211,81 @@ function formatBytes(bytes) {
   return `${val.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
-// Navigation Tabs
-navDownloader.addEventListener('click', () => {
-  navDownloader.classList.add('active');
-  navLibrary.classList.remove('active');
-  viewDownloader.classList.remove('hidden');
-  viewLibrary.classList.add('hidden');
+// Centralized View Switching Engine
+function switchMainView(targetId) {
+  document.querySelectorAll('.view-section').forEach(view => {
+    if (view.id === targetId) {
+      view.classList.remove('hidden');
+      view.classList.add('active');
+    } else {
+      view.classList.add('hidden');
+      view.classList.remove('active');
+    }
+  });
+
+  // Desktop Navigation active highlight
+  document.querySelectorAll('.nav-item').forEach(item => {
+    const isTarget =
+      (targetId === 'view-home' && item.id === 'nav-home') ||
+      (targetId === 'view-downloader' && item.id === 'nav-downloader') ||
+      (targetId === 'view-shows' && item.id === 'nav-shows') ||
+      (targetId === 'view-library' && item.id === 'nav-library');
+    item.classList.toggle('active', isTarget);
+  });
+
+  // Mobile Bottom Tab Bar active highlight
+  document.querySelectorAll('.mobile-nav-btn[data-target]').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.target === targetId);
+  });
+
+  if (targetId === 'view-library') {
+    loadOfflineLibrary();
+  }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Navigation Listeners
+navHome?.addEventListener('click', () => switchMainView('view-home'));
+navDownloader?.addEventListener('click', () => switchMainView('view-downloader'));
+navLibrary?.addEventListener('click', () => switchMainView('view-library'));
+navShows?.addEventListener('click', () => switchMainView('view-shows'));
+
+// Landing Page Hero & CTA Buttons
+document.getElementById('btn-hero-launch')?.addEventListener('click', () => {
+  switchMainView('view-downloader');
+  urlInput?.focus();
 });
 
-navLibrary.addEventListener('click', () => {
-  navLibrary.classList.add('active');
-  navDownloader.classList.remove('active');
-  viewLibrary.classList.remove('hidden');
-  viewDownloader.classList.add('hidden');
-  loadOfflineLibrary();
+document.getElementById('btn-hero-explore')?.addEventListener('click', () => {
+  document.getElementById('section-features')?.scrollIntoView({ behavior: 'smooth' });
+});
+
+document.getElementById('btn-cta-launch')?.addEventListener('click', () => {
+  switchMainView('view-downloader');
+  urlInput?.focus();
+});
+
+document.getElementById('btn-footer-home')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  switchMainView('view-home');
+});
+
+document.getElementById('btn-footer-downloader')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  switchMainView('view-downloader');
+});
+
+// Quick Connectors Bar in Downloader View
+document.querySelectorAll('.d-conn-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const sampleUrl = btn.dataset.sample;
+    if (sampleUrl) {
+      urlInput.value = sampleUrl;
+      showToast(`Loaded ${btn.textContent.trim()} sample`);
+      fetchAlbumFromUrl(sampleUrl);
+    }
+  });
 });
 
 // Sample Chips
@@ -239,6 +309,167 @@ urlInput.addEventListener('keydown', e => {
   }
 });
 
+// Multi-stage Stepper Helper for Liquid Shimmer Animation
+function updateStepper(type, stageNumber) {
+  // type is 'single' or 'album', stageNumber is 1..5
+  for (let i = 1; i <= 5; i++) {
+    const el = document.getElementById(`stage-${type}-${i}`);
+    if (!el) continue;
+    if (i < stageNumber) {
+      el.className = 'stage-step completed';
+    } else if (i === stageNumber) {
+      el.className = 'stage-step active pulse';
+    } else {
+      el.className = 'stage-step';
+    }
+  }
+}
+
+// Preview & Confirmation Dialogue Modal
+let pendingInspectedMedia = null;
+
+const previewConfirmModal = document.getElementById('preview-confirmation-modal');
+const btnCloseConfirmModal = document.getElementById('btn-close-confirm-modal');
+const btnCancelConfirm = document.getElementById('btn-cancel-confirm');
+const confirmArtThumb = document.getElementById('confirm-art-thumb');
+const confirmPlatformBadge = document.getElementById('confirm-platform-badge');
+const confirmTypeBadge = document.getElementById('confirm-type-badge');
+const confirmTrackCount = document.getElementById('confirm-track-count');
+const confirmDurationTag = document.getElementById('confirm-duration-tag');
+const confirmSizeTag = document.getElementById('confirm-size-tag');
+const confirmMediaTitle = document.getElementById('confirm-media-title');
+const confirmMediaArtist = document.getElementById('confirm-media-artist');
+const confirmMediaAlbum = document.getElementById('confirm-media-album');
+const confirmTracklistSnippet = document.getElementById('confirm-tracklist-snippet');
+const snippetMoreCount = document.getElementById('snippet-more-count');
+const confirmSnippetItems = document.getElementById('confirm-snippet-items');
+const chkOwnershipAgree = document.getElementById('chk-ownership-agree');
+const btnProceedDownload = document.getElementById('btn-proceed-download');
+
+function openPreviewConfirmationModal(media) {
+  if (!previewConfirmModal) {
+    proceedWithInspectedMedia(media);
+    return;
+  }
+
+  if (confirmArtThumb) {
+    confirmArtThumb.src = media.artwork || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23222"/></svg>';
+  }
+
+  if (confirmPlatformBadge) {
+    confirmPlatformBadge.textContent = `${media.platformIcon || '🎵'} ${media.platformName || 'Music'}`;
+  }
+
+  if (confirmTypeBadge) {
+    confirmTypeBadge.textContent = (media.type || 'MEDIA').toUpperCase();
+  }
+
+  const isMulti = (media.type === 'album' || media.type === 'playlist');
+  const trackList = media.tracks || media.appleMusicRaw?.tracks || [];
+
+  if (confirmTrackCount) {
+    confirmTrackCount.textContent = isMulti ? `${trackList.length} Tracks` : '1 Track';
+  }
+
+  if (confirmDurationTag) {
+    confirmDurationTag.textContent = media.durationString || media.durationFormatted || '--:--';
+  }
+
+  if (confirmSizeTag) {
+    confirmSizeTag.textContent = media.sizeFormatted || media.totalSizeFormatted || '~85 MB';
+  }
+
+  if (confirmMediaTitle) confirmMediaTitle.textContent = media.title || 'Untitled';
+  if (confirmMediaArtist) confirmMediaArtist.textContent = media.artist || 'Unknown Artist';
+  if (confirmMediaAlbum) confirmMediaAlbum.textContent = media.album || (isMulti ? 'Curated Album/Playlist' : media.title);
+
+  // Tracklist snippet preview
+  if (confirmTracklistSnippet && confirmSnippetItems) {
+    confirmSnippetItems.innerHTML = '';
+    if (isMulti && trackList.length > 0) {
+      confirmTracklistSnippet.classList.remove('hidden');
+      const snippetLimit = Math.min(trackList.length, 4);
+      for (let i = 0; i < snippetLimit; i++) {
+        const t = trackList[i];
+        const row = document.createElement('div');
+        row.className = 'snippet-track-row';
+        row.innerHTML = `
+          <span class="snip-num">${i + 1}</span>
+          <span class="snip-title">${t.title || 'Song'}</span>
+          <span class="snip-dur">${t.durationFormatted || t.duration || ''}</span>
+        `;
+        confirmSnippetItems.appendChild(row);
+      }
+      if (snippetMoreCount) {
+        const remaining = trackList.length - snippetLimit;
+        snippetMoreCount.textContent = remaining > 0 ? `+ ${remaining} more tracks in queue` : 'All tracks shown';
+      }
+    } else {
+      confirmTracklistSnippet.classList.add('hidden');
+    }
+  }
+
+  // Quality chip sync
+  document.querySelectorAll('.btn-quality-chip[data-confirm-quality]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.confirmQuality === currentAudioQuality);
+  });
+
+  if (chkOwnershipAgree) {
+    chkOwnershipAgree.checked = true;
+  }
+
+  previewConfirmModal.classList.remove('hidden');
+}
+
+function proceedWithInspectedMedia(media) {
+  switchMainView('view-downloader');
+
+  if (media.type === 'album' || media.type === 'playlist') {
+    singleMediaContainer?.classList.add('hidden');
+    displayAlbum(media.appleMusicRaw || media);
+    updateStepper('album', 1);
+    showToast(`✓ Ownership confirmed! Starting lossless album download...`);
+    setTimeout(() => {
+      btnDownloadAlbum.click();
+    }, 400);
+  } else {
+    displaySingleMedia(media);
+    updateStepper('single', 1);
+    showToast(`✓ Ownership confirmed! Starting track download...`);
+    setTimeout(() => {
+      downloadMediaAction('mp3');
+    }, 400);
+  }
+}
+
+if (btnProceedDownload) {
+  btnProceedDownload.addEventListener('click', () => {
+    if (chkOwnershipAgree && !chkOwnershipAgree.checked) {
+      showToast('⚠️ Please verify playlist ownership / backup rights.');
+      return;
+    }
+
+    if (!pendingInspectedMedia) return;
+    previewConfirmModal?.classList.add('hidden');
+    proceedWithInspectedMedia(pendingInspectedMedia);
+  });
+}
+
+[btnCloseConfirmModal, btnCancelConfirm].forEach(btn => {
+  btn?.addEventListener('click', () => {
+    previewConfirmModal?.classList.add('hidden');
+    pendingInspectedMedia = null;
+  });
+});
+
+document.querySelectorAll('.btn-quality-chip[data-confirm-quality]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.btn-quality-chip[data-confirm-quality]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    setAudioQuality(btn.dataset.confirmQuality);
+  });
+});
+
 // Universal Fetch & Inspect API (Any Platform)
 async function fetchAlbumFromUrl(url) {
   btnFetch.disabled = true;
@@ -257,18 +488,13 @@ async function fetchAlbumFromUrl(url) {
     }
 
     const media = data.media;
-
-    if (media.type === 'album' || media.type === 'playlist') {
-      singleMediaContainer?.classList.add('hidden');
-      displayAlbum(media.appleMusicRaw || media);
-    } else {
-      displaySingleMedia(media);
-    }
+    pendingInspectedMedia = media;
+    openPreviewConfirmationModal(media);
   } catch (err) {
     alert(err.message);
   } finally {
     btnFetch.disabled = false;
-    btnFetch.innerHTML = '<span>Fetch & Download</span>';
+    btnFetch.innerHTML = '<span>Verify & Download</span>';
   }
 }
 
@@ -707,6 +933,7 @@ function initEventSource() {
   evtSource.addEventListener('album_started', e => {
     const data = JSON.parse(e.data);
     if (data.jobId) activeDownloadJobId = data.jobId;
+    updateStepper('album', 2);
     sidebarQueue.classList.remove('hidden');
     queuePercent.textContent = '0%';
     queueProgressBar.style.width = '0%';
@@ -725,6 +952,7 @@ function initEventSource() {
   evtSource.addEventListener('album_completed', e => {
     const data = JSON.parse(e.data);
     activeDownloadJobId = null;
+    updateStepper('album', 5);
     btnDownloadAlbum.disabled = false;
     downloadAlbumText.textContent = '✓ Album Downloaded';
     const sizeInfo = data.totalSizeFormatted ? ` (${data.totalSizeFormatted})` : '';
@@ -765,6 +993,7 @@ function initEventSource() {
   evtSource.addEventListener('media_started', e => {
     const data = JSON.parse(e.data);
     if (data.jobId) activeDownloadJobId = data.jobId;
+    updateStepper('single', 2);
     sidebarQueue.classList.remove('hidden');
     queuePercent.textContent = '0%';
     queueProgressBar.style.width = '0%';
@@ -788,7 +1017,10 @@ function initEventSource() {
       mediaProgressPercent.textContent = `${pct}%`;
       mediaProgressFill.style.width = `${pct}%`;
       if (data.status === 'tagging') {
+        updateStepper('single', 4);
         mediaProgressText.textContent = 'Tagging & embedding artwork...';
+      } else if (data.status === 'encoding') {
+        updateStepper('single', 3);
       } else if (data.totalSize) {
         mediaProgressText.textContent = `Downloading ${data.title} (${data.totalSize})`;
       }
@@ -808,6 +1040,7 @@ function initEventSource() {
   evtSource.addEventListener('media_completed', e => {
     const data = JSON.parse(e.data);
     activeDownloadJobId = null;
+    updateStepper('single', 5);
     const format = (data.format || 'mp3').toLowerCase();
     const btn = format === 'mp4' ? btnDownloadMp4 : btnDownloadMp3;
 
@@ -954,12 +1187,18 @@ function handleDownloadProgress(data) {
 
       if (actionContainer) {
         if (data.status === 'downloading') {
+          updateStepper('album', 2);
+          updateStepper('single', 2);
           const sizeInfo = data.totalSize ? ` • ${data.totalSize}` : '';
           const pct = data.percent !== undefined ? `${data.percent}%` : '';
           actionContainer.innerHTML = `<span class="track-status-pill status-downloading">${pct}${sizeInfo}</span>`;
         } else if (data.status === 'tagging') {
+          updateStepper('album', 4);
+          updateStepper('single', 4);
           actionContainer.innerHTML = `<span class="track-status-pill status-tagging">Tagging...</span>`;
         } else if (data.status === 'done' || data.type === 'track_complete' || data.status === 'already_downloaded') {
+          updateStepper('album', 4);
+          updateStepper('single', 5);
           const sizeInfo = data.fileSize ? ` (${data.fileSize})` : '';
           actionContainer.innerHTML = `<span class="track-status-pill status-done" title="Open in Finder">Done${sizeInfo} ✓</span>`;
           actionContainer.querySelector('.status-done')?.addEventListener('click', (e) => {
@@ -1492,34 +1731,7 @@ if (localStorage.getItem('appllify_banner_dismissed') === 'true') {
 const mobileTabs = document.querySelectorAll('.mobile-nav-btn[data-target]');
 mobileTabs.forEach(tab => {
   tab.addEventListener('click', () => {
-    mobileTabs.forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-
-    const targetId = tab.dataset.target;
-    document.querySelectorAll('.view-section').forEach(view => {
-      if (view.id === targetId) {
-        view.classList.remove('hidden');
-        view.classList.add('active');
-      } else {
-        view.classList.add('hidden');
-        view.classList.remove('active');
-      }
-    });
-
-    // Also sync desktop sidebar active state
-    document.querySelectorAll('.nav-item').forEach(item => {
-      if (
-        (targetId === 'view-downloader' && item.id === 'nav-downloader') ||
-        (targetId === 'view-library' && item.id === 'nav-library') ||
-        (targetId === 'view-shows' && item.id === 'nav-shows')
-      ) {
-        item.classList.add('active');
-      } else {
-        item.classList.remove('active');
-      }
-    });
-
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    switchMainView(tab.dataset.target);
   });
 });
 
