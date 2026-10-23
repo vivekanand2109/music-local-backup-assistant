@@ -1,5 +1,6 @@
 [build]
   publish = "public"
+  functions = "netlify/functions"
 
 # HTTP Security Headers & Caching Policies
 [[headers]]
@@ -35,12 +36,31 @@
     Content-Type = "text/plain; charset=UTF-8"
     Cache-Control = "public, max-age=3600"
 
-# Proxy all API and streaming requests to the live backend server
+# Route API endpoints directly to Netlify Functions (100% Serverless Cloud)
 [[redirects]]
-  from = "/api/*"
-  to = "https://spleen-uniformly-seminar.ngrok-free.dev/api/:splat"
+  from = "/api/inspect-link"
+  to = "/.netlify/functions/inspect-link"
   status = 200
-  force = true
+
+[[redirects]]
+  from = "/api/download"
+  to = "/.netlify/functions/download"
+  status = 200
+
+[[redirects]]
+  from = "/api/download-media"
+  to = "/.netlify/functions/download"
+  status = 200
+
+[[redirects]]
+  from = "/api/download-album"
+  to = "/.netlify/functions/download"
+  status = 200
+
+[[redirects]]
+  from = "/api/network-info"
+  to = "/.netlify/functions/network-info"
+  status = 200
 
 # Single Page App routing fallback
 [[redirects]]

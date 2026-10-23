@@ -1,2 +1,7 @@
-/api/*  https://spleen-uniformly-seminar.ngrok-free.dev/api/:splat  200!
-/*  /index.html  200
+/api/inspect-link   /.netlify/functions/inspect-link   200
+/api/download       /.netlify/functions/download       200
+/api/download-media /.netlify/functions/download       200
+/api/download-album /.netlify/functions/download       200
+/api/network-info   /.netlify/functions/network-info   200
+/api/*              /.netlify/functions/inspect-link   200
+/*                  /index.html                        200

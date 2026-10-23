@@ -1,19 +1,8 @@
-// Permanent Backend Server & API Routing
-const PERMANENT_BACKEND = 'https://spleen-uniformly-seminar.ngrok-free.dev';
-
-function getBackendBase() {
-  const host = window.location.hostname;
-  if (host === 'localhost' || host === '127.0.0.1' || host.includes('ngrok')) {
-    return '';
-  }
-  return localStorage.getItem('custom_backend_url') || PERMANENT_BACKEND;
-}
-
+// Autonomous Cloud API Routing (Netlify Serverless)
 function apiUrl(path) {
   if (!path) return '';
   if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) return path;
-  const base = getBackendBase();
-  return base ? `${base}${path.startsWith('/') ? '' : '/'}${path}` : path;
+  return path.startsWith('/') ? path : `/${path}`;
 }
 
 // State
@@ -607,9 +596,49 @@ async function downloadMediaAction(format) {
         codec: currentAudioCodec
       })
     });
+
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('audio') || contentType.includes('octet-stream')) {
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `${currentSingleMedia.artist || 'Artist'} - ${currentSingleMedia.title || 'Track'}.${format || 'mp3'}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 10000);
+
+      updateStepper('single', 5);
+      if (mediaProgressPercent) mediaProgressPercent.textContent = '100%';
+      if (mediaProgressFill) mediaProgressFill.style.width = '100%';
+      if (mediaProgressText) mediaProgressText.textContent = `✓ Downloaded to device storage!`;
+      showToast(`✓ Downloaded "${currentSingleMedia.title}" to device!`);
+      if (btn) btn.disabled = false;
+      return;
+    }
+
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
-    if (data.jobId) activeDownloadJobId = data.jobId;
+
+    if (data.downloadUrl) {
+      const a = document.createElement('a');
+      a.href = data.downloadUrl;
+      a.download = data.filename || `${currentSingleMedia.title}.mp3`;
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      updateStepper('single', 5);
+      if (mediaProgressPercent) mediaProgressPercent.textContent = '100%';
+      if (mediaProgressFill) mediaProgressFill.style.width = '100%';
+      if (mediaProgressText) mediaProgressText.textContent = `✓ Downloaded to device storage!`;
+      showToast(`✓ Downloaded "${currentSingleMedia.title}"!`);
+      if (btn) btn.disabled = false;
+    } else if (data.jobId) {
+      activeDownloadJobId = data.jobId;
+    }
   } catch (err) {
     alert('Download error: ' + err.message);
     if (btn) {
@@ -770,14 +799,39 @@ btnDownloadAlbum.addEventListener('click', async () => {
   queueTrackStatus.textContent = `Starting ${currentAlbum.title}...`;
 
   try {
-    const res = await fetch(apiUrl('/api/download-album'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ album: currentAlbum, quality: currentAudioQuality, codec: currentAudioCodec })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
-    if (data.jobId) activeDownloadJobId = data.jobId;
+    if (currentAlbum.tracks && currentAlbum.tracks.length > 0) {
+      showToast(`Starting batch download of ${currentAlbum.tracks.length} songs...`);
+      updateStepper('album', 2);
+
+      let count = 0;
+      for (let i = 0; i < currentAlbum.tracks.length; i++) {
+        const t = currentAlbum.tracks[i];
+        const pct = Math.round(((i + 1) / currentAlbum.tracks.length) * 100);
+        albumProgressPercent.textContent = `${pct}%`;
+        albumProgressFill.style.width = `${pct}%`;
+        albumProgressText.textContent = `Downloading song ${i + 1} of ${currentAlbum.tracks.length}: "${t.title}"...`;
+        await downloadSingleTrackAction(t, i);
+        count++;
+        await new Promise(r => setTimeout(r, 600));
+      }
+
+      updateStepper('album', 5);
+      albumProgressText.textContent = `✓ Completed! Saved all ${count} tracks to device.`;
+      albumProgressPercent.textContent = '100%';
+      albumProgressFill.style.width = '100%';
+      btnDownloadAlbum.disabled = false;
+      downloadAlbumText.textContent = '✓ Album Downloaded';
+      showToast(`✓ All ${count} tracks downloaded to device!`);
+    } else {
+      const res = await fetch(apiUrl('/api/download-album'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ album: currentAlbum, quality: currentAudioQuality, codec: currentAudioCodec })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      if (data.jobId) activeDownloadJobId = data.jobId;
+    }
   } catch (err) {
     alert('Download failed: ' + err.message);
     btnDownloadAlbum.disabled = false;
@@ -799,20 +853,60 @@ async function downloadSingleTrackAction(track, idx) {
   queueTrackStatus.textContent = `Downloading "${track.title}" (${qLabel})...`;
 
   try {
-    const res = await fetch(apiUrl('/api/download-track'), {
+    const res = await fetch(apiUrl('/api/download-media'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        track,
-        album: currentAlbum,
-        trackIndex: idx,
+        item: {
+          title: track.title,
+          artist: track.artist || currentAlbum?.artist,
+          album: currentAlbum?.title,
+          artwork: track.artwork || currentAlbum?.artwork,
+          previewUrl: track.previewUrl,
+          url: track.url,
+          searchQuery: track.searchQuery || `${track.artist || currentAlbum?.artist} - ${track.title}`
+        },
+        format: 'mp3',
         quality: currentAudioQuality,
         codec: currentAudioCodec
       })
     });
+
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('audio') || contentType.includes('octet-stream')) {
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `${track.artist || currentAlbum?.artist || 'Artist'} - ${track.title}.mp3`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 10000);
+
+      if (actionContainer) {
+        actionContainer.innerHTML = `<span class="track-status-pill status-done">Downloaded ✓</span>`;
+      }
+      showToast(`✓ Downloaded "${track.title}"!`);
+      return;
+    }
+
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to start download');
-    if (data.jobId) activeDownloadJobId = data.jobId;
+    if (data.downloadUrl) {
+      const a = document.createElement('a');
+      a.href = data.downloadUrl;
+      a.download = data.filename || `${track.title}.mp3`;
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      if (actionContainer) {
+        actionContainer.innerHTML = `<span class="track-status-pill status-done">Downloaded ✓</span>`;
+      }
+      showToast(`✓ Downloaded "${track.title}"!`);
+    } else if (data.jobId) {
+      activeDownloadJobId = data.jobId;
+    }
   } catch (err) {
     if (actionContainer) {
       actionContainer.innerHTML = `<button class="btn-download-track" data-index="${idx}">Retry</button>`;
@@ -855,7 +949,16 @@ if (btnQuickFinder) {
 
 // SSE Event Stream for live progress updates
 function initEventSource() {
-  const evtSource = new EventSource(apiUrl('/api/events'));
+  let evtSource;
+  try {
+    evtSource = new EventSource(apiUrl('/api/events'));
+    evtSource.onerror = () => {
+      // Gracefully close on serverless hosting where persistent SSE is not used
+      evtSource.close();
+    };
+  } catch (e) {
+    return;
+  }
 
   evtSource.addEventListener('download_progress', e => {
     const data = JSON.parse(e.data);
