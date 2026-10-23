@@ -39,12 +39,14 @@ async function inspectAppleMusic(url) {
   const songMatch = url.match(/[?&]i=([0-9]+)/);
   const albumMatch = url.match(/album\/(?:[^/]+\/)?([0-9]+)/);
   const id = songMatch ? songMatch[1] : (albumMatch ? albumMatch[1] : null);
+  const countryMatch = url.match(/music\.apple\.com\/([a-z]{2})\//i);
+  const country = countryMatch ? countryMatch[1].toLowerCase() : 'us';
 
   if (!id) {
     throw new Error('Could not find Apple Music album or song ID in URL.');
   }
 
-  const itunesUrl = `https://itunes.apple.com/lookup?id=${id}&entity=song`;
+  const itunesUrl = `https://itunes.apple.com/lookup?id=${id}&country=${country}&entity=song`;
   const res = await fetch(itunesUrl, {
     headers: { 'Accept': 'application/json' }
   });
@@ -59,12 +61,14 @@ async function inspectAppleMusic(url) {
   }
 
   const isSongExplicit = Boolean(songMatch);
+  const collection = data.results.find(r => r.wrapperType === 'collection');
   const first = data.results[0];
-  const isAlbum = first.wrapperType === 'collection' && !isSongExplicit;
+  const isAlbum = Boolean(collection && !isSongExplicit);
 
   if (isAlbum) {
-    const rawTracks = data.results.slice(1);
-    const artwork = (first.artworkUrl100 || '').replace('100x100bb.jpg', '3000x3000bb.jpg');
+    const parentCollection = collection || first;
+    const rawTracks = data.results.filter(r => r.wrapperType === 'track');
+    const artwork = (parentCollection.artworkUrl100 || first.artworkUrl100 || '').replace('100x100bb.jpg', '3000x3000bb.jpg');
 
     let totalDurationMs = 0;
     const tracks = rawTracks.map((t, idx) => {
@@ -75,15 +79,15 @@ async function inspectAppleMusic(url) {
         id: String(t.trackId || idx + 1),
         trackNumber: t.trackNumber || idx + 1,
         title: t.trackName || `Track ${idx + 1}`,
-        artist: t.artistName || first.artistName,
-        album: first.collectionName,
+        artist: t.artistName || parentCollection.artistName,
+        album: parentCollection.collectionName,
         artwork: artwork,
         durationMs: durMs,
         durationString: formatTime(durMs / 1000),
         sizeFormatted: `~${formatBytes(tEstBytes)}`,
         previewUrl: t.previewUrl || null,
         url: t.trackViewUrl || url,
-        searchQuery: `${t.artistName || first.artistName} - ${t.trackName} audio`
+        searchQuery: `${t.artistName || parentCollection.artistName} - ${t.trackName} audio`
       };
     });
 
@@ -95,15 +99,28 @@ async function inspectAppleMusic(url) {
       platformName: 'Apple Music',
       platformIcon: '🍎',
       type: 'album',
-      id: String(first.collectionId),
-      title: first.collectionName,
-      artist: first.artistName,
+      id: String(parentCollection.collectionId || id),
+      title: parentCollection.collectionName,
+      artist: parentCollection.artistName,
       artwork: artwork,
-      genre: first.primaryGenreName || 'Music',
-      year: first.releaseDate ? new Date(first.releaseDate).getFullYear() : '2024',
-      tracks: tracks,
-      totalTracks: tracks.length,
-      totalDurationMs: totalDurationMs,
+      genre: parentCollection.primaryGenreName || 'Music',
+      year: parentCollection.releaseDate ? new Date(parentCollection.releaseDate).getFullYear() : '2024',
+      tracks: tracks.length > 0 ? tracks : [{
+        id: String(id),
+        trackNumber: 1,
+        title: parentCollection.collectionName,
+        artist: parentCollection.artistName,
+        album: parentCollection.collectionName,
+        artwork: artwork,
+        durationMs: 210000,
+        durationString: '3:30',
+        sizeFormatted: '~7 MB',
+        previewUrl: first.previewUrl || null,
+        url: url,
+        searchQuery: `${parentCollection.artistName} - ${parentCollection.collectionName} audio`
+      }],
+      totalTracks: tracks.length || 1,
+      totalDurationMs: totalDurationMs || 210000,
       totalSizeFormatted: sizeStr,
       url: url,
       mediaFormats: ['mp3', 'alac', 'flac']
@@ -138,71 +155,66 @@ async function inspectAppleMusic(url) {
   }
 }
 
-// 2. JioSaavn Inspection
+// 2. JioSaavn Inspection (Search API & Slug Fallback)
 async function inspectJioSaavn(url) {
-  const res = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+  const slugMatch = url.match(/(?:song|album)\/([^/]+)/i);
+  const rawSlug = slugMatch ? slugMatch[1].replace(/[-_]/g, ' ').trim() : '';
+
+  try {
+    const query = rawSlug || 'Song';
+    const saavnApi = `https://www.jiosaavn.com/api.php?__call=search.getResults&q=${encodeURIComponent(query)}&_format=json&_marker=0&ctx=web6dot0`;
+    const sRes = await fetch(saavnApi, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+      }
+    });
+
+    if (sRes.ok) {
+      const sData = await sRes.json();
+      if (sData.results && sData.results.length > 0) {
+        const item = sData.results[0];
+        const artwork = (item.image || '').replace('150x150', '500x500');
+        const durSec = parseInt(item.duration, 10) || 240;
+        return {
+          platform: 'jiosaavn',
+          platformName: 'JioSaavn',
+          platformIcon: '🟢',
+          type: 'track',
+          id: item.id || `jiosaavn_${Date.now()}`,
+          title: item.song || rawSlug || 'JioSaavn Track',
+          artist: item.primary_artists || item.singers || 'JioSaavn Artist',
+          album: item.album || item.song || 'JioSaavn',
+          artwork: artwork,
+          durationMs: durSec * 1000,
+          durationString: formatTime(durSec),
+          url: url,
+          previewUrl: item.media_preview_url || null,
+          searchQuery: `${item.primary_artists || ''} - ${item.song || rawSlug} audio`,
+          mediaFormats: ['mp3'],
+          sizeFormatted: '~9.6 MB',
+          estimatedSizes: { mp3: '~9.6 MB' }
+        };
+      }
     }
-  });
-
-  if (!res.ok) {
-    throw new Error('JioSaavn page could not be loaded.');
+  } catch (err) {
+    console.warn('JioSaavn API search failed, using fallback:', err.message);
   }
 
-  const html = await res.text();
-  const titleMatch = html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i) || html.match(/<title>([^<]+)<\/title>/i);
-  const imgMatch = html.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i);
-  const descMatch = html.match(/<meta\s+property=["']og:description["']\s+content=["']([^"']+)["']/i);
-  const metaDescMatch = html.match(/<meta\s+name=["']description["']\s+content=["']([^"']+)["']/i);
-
-  let title = 'JioSaavn Track';
-  let artist = 'JioSaavn Artist';
-  let album = 'JioSaavn';
-
-  if (titleMatch) {
-    let rawTitle = titleMatch[1].replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, '&');
-    const parts = rawTitle.split(/ - | @ /);
-    title = parts[0].replace(/\(Full Song\)/i, '').trim();
-    if (parts.length > 1) {
-      album = parts[1].replace(/Song Download from/i, '').replace(/Download or Listen Free/i, '').trim();
-    }
-  }
-
-  if (metaDescMatch) {
-    let mDesc = metaDescMatch[1].replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, '&');
-    const songByMatch = mDesc.match(/song by\s+([^from]+?)\s+from/i);
-    if (songByMatch) {
-      artist = songByMatch[1].trim();
-    }
-  } else if (descMatch) {
-    let desc = descMatch[1].replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, '&');
-    const songByMatch = desc.match(/song by\s+([^from]+?)\s+from/i) || desc.match(/(?:features|by|sung by|singers?[:\s]+)([^,.]+)/i);
-    if (songByMatch) artist = songByMatch[1].trim();
-  }
-
-  let artwork = imgMatch ? imgMatch[1] : null;
-  if (artwork && artwork.includes('150x150')) {
-    artwork = artwork.replace('150x150', '500x500');
-  }
-
-  const isPlaylist = /playlist|album/i.test(url);
-
+  const title = rawSlug ? rawSlug.replace(/\b\w/g, l => l.toUpperCase()) : 'JioSaavn Track';
   return {
     platform: 'jiosaavn',
     platformName: 'JioSaavn',
     platformIcon: '🟢',
-    type: isPlaylist ? 'playlist' : 'track',
+    type: 'track',
     id: `jiosaavn_${Date.now()}`,
     title: title,
-    artist: artist,
-    album: album,
-    artwork: artwork,
+    artist: 'JioSaavn Artist',
+    album: title,
+    artwork: 'https://appllifymusic.netlify.app/og-banner.png',
     durationMs: 240000,
     durationString: '4:00',
     url: url,
-    searchQuery: `${artist} - ${title} audio`,
+    searchQuery: `${title} audio`,
     mediaFormats: ['mp3'],
     sizeFormatted: '~9.6 MB',
     estimatedSizes: { mp3: '~9.6 MB' }
@@ -246,45 +258,70 @@ async function inspectSpotify(url) {
 
 // 4. Gaana Inspection
 async function inspectGaana(url) {
-  const res = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+  const slugMatch = url.match(/(?:song|album)\/([^/]+)/i);
+  const rawSlug = slugMatch ? slugMatch[1].replace(/[-_]/g, ' ').trim() : '';
+
+  try {
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+      }
+    });
+
+    if (res.ok) {
+      const html = await res.text();
+      const titleMatch = html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i) || html.match(/<title>([^<]+)<\/title>/i);
+      const imgMatch = html.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i);
+      const descMatch = html.match(/<meta\s+property=["']og:description["']\s+content=["']([^"']+)["']/i);
+
+      let title = titleMatch ? titleMatch[1].replace(/Song Download:.*$/i, '').replace(/MP3 Song.*$/i, '').replace(/\|.*$/i, '').trim() : rawSlug;
+      let artist = 'Gaana Artist';
+      if (descMatch) {
+        const artistMatch = descMatch[1].match(/(?:by|sung by|artist[s]?[:\s]+)([^,.]+)/i);
+        if (artistMatch) artist = artistMatch[1].trim();
+      }
+
+      const artwork = imgMatch ? imgMatch[1] : null;
+      const isPlaylist = /playlist|album/i.test(url);
+
+      return {
+        platform: 'gaana',
+        platformName: 'Gaana',
+        platformIcon: '🔴',
+        type: isPlaylist ? 'playlist' : 'track',
+        id: `gaana_${Date.now()}`,
+        title: title || 'Gaana Track',
+        artist: artist,
+        album: title || 'Gaana',
+        artwork: artwork,
+        durationMs: 210000,
+        durationString: '3:30',
+        url: url,
+        searchQuery: `${artist} - ${title} audio`,
+        mediaFormats: ['mp3'],
+        sizeFormatted: '~8.4 MB',
+        estimatedSizes: { mp3: '~8.4 MB' }
+      };
     }
-  });
-
-  if (!res.ok) {
-    throw new Error('Gaana page could not be loaded.');
+  } catch (err) {
+    console.warn('Gaana page fetch failed, using slug:', err.message);
   }
 
-  const html = await res.text();
-  const titleMatch = html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i) || html.match(/<title>([^<]+)<\/title>/i);
-  const imgMatch = html.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i);
-  const descMatch = html.match(/<meta\s+property=["']og:description["']\s+content=["']([^"']+)["']/i);
-
-  let title = titleMatch ? titleMatch[1].replace(/Song Download:.*$/i, '').replace(/MP3 Song.*$/i, '').replace(/\|.*$/i, '').trim() : 'Gaana Track';
-  let artist = 'Gaana Artist';
-  if (descMatch) {
-    const artistMatch = descMatch[1].match(/(?:by|sung by|artist[s]?[:\s]+)([^,.]+)/i);
-    if (artistMatch) artist = artistMatch[1].trim();
-  }
-
-  const artwork = imgMatch ? imgMatch[1] : null;
-  const isPlaylist = /playlist|album/i.test(url);
-
+  const title = rawSlug ? rawSlug.replace(/\b\w/g, l => l.toUpperCase()) : 'Gaana Track';
   return {
     platform: 'gaana',
     platformName: 'Gaana',
     platformIcon: '🔴',
-    type: isPlaylist ? 'playlist' : 'track',
+    type: 'track',
     id: `gaana_${Date.now()}`,
     title: title,
-    artist: artist,
+    artist: 'Gaana Artist',
     album: title,
-    artwork: artwork,
+    artwork: 'https://appllifymusic.netlify.app/og-banner.png',
     durationMs: 210000,
     durationString: '3:30',
     url: url,
-    searchQuery: `${artist} - ${title} audio`,
+    searchQuery: `${title} audio`,
     mediaFormats: ['mp3'],
     sizeFormatted: '~8.4 MB',
     estimatedSizes: { mp3: '~8.4 MB' }

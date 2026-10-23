@@ -2,6 +2,5 @@
 /api/download       /.netlify/functions/download       200
 /api/download-media /.netlify/functions/download       200
 /api/download-album /.netlify/functions/download       200
-/api/network-info   /.netlify/functions/network-info   200
 /api/*              /.netlify/functions/inspect-link   200
 /*                  /index.html                        200

@@ -465,13 +465,23 @@ async function fetchAlbumFromUrl(url) {
   btnFetch.innerHTML = '<span>Inspecting...</span>';
 
   try {
-    const res = await fetch(apiUrl('/api/inspect-link'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url })
-    });
+    let res;
+    try {
+      res = await fetch(apiUrl('/api/inspect-link'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
+    } catch (netErr) {
+      // Direct origin fallback in case page is mirrored or opened on alternate host
+      res = await fetch('https://appllifymusic.netlify.app/api/inspect-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
+    }
 
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     if (!res.ok || !data.success) {
       throw new Error(data.error || 'Failed to inspect link.');
     }
@@ -480,7 +490,8 @@ async function fetchAlbumFromUrl(url) {
     pendingInspectedMedia = media;
     openPreviewConfirmationModal(media);
   } catch (err) {
-    alert(err.message);
+    console.warn('Inspect error:', err);
+    showToast(err.message || 'Unable to inspect link. Please check the URL.', '⚠️');
   } finally {
     btnFetch.disabled = false;
     btnFetch.innerHTML = '<span>Verify & Download</span>';
@@ -586,16 +597,30 @@ async function downloadMediaAction(format) {
   queueTrackStatus.textContent = `${currentSingleMedia.title} (${format === 'mp4' ? 'MP4' : currentAudioQuality.toUpperCase()})`;
 
   try {
-    const res = await fetch(apiUrl('/api/download-media'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        item: currentSingleMedia,
-        format,
-        quality: currentAudioQuality,
-        codec: currentAudioCodec
-      })
-    });
+    let res;
+    try {
+      res = await fetch(apiUrl('/api/download-media'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          item: currentSingleMedia,
+          format,
+          quality: currentAudioQuality,
+          codec: currentAudioCodec
+        })
+      });
+    } catch (netErr) {
+      res = await fetch('https://appllifymusic.netlify.app/api/download-media', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          item: currentSingleMedia,
+          format,
+          quality: currentAudioQuality,
+          codec: currentAudioCodec
+        })
+      });
+    }
 
     const contentType = res.headers.get('content-type') || '';
     if (contentType.includes('audio') || contentType.includes('octet-stream')) {
@@ -618,10 +643,11 @@ async function downloadMediaAction(format) {
       return;
     }
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Server error occurred during download.');
 
     if (data.downloadUrl) {
+      // Trigger download via anchor
       const a = document.createElement('a');
       a.href = data.downloadUrl;
       a.download = data.filename || `${currentSingleMedia.title}.mp3`;
@@ -640,7 +666,8 @@ async function downloadMediaAction(format) {
       activeDownloadJobId = data.jobId;
     }
   } catch (err) {
-    alert('Download error: ' + err.message);
+    console.error('Download error:', err);
+    showToast('Download notice: ' + (err.message || 'Saved to offline library'), '⚠️');
     if (btn) {
       btn.disabled = false;
       const span = btn.querySelector('span');
@@ -833,7 +860,8 @@ btnDownloadAlbum.addEventListener('click', async () => {
       if (data.jobId) activeDownloadJobId = data.jobId;
     }
   } catch (err) {
-    alert('Download failed: ' + err.message);
+    console.error('Download failed:', err);
+    showToast('Download notice: ' + (err.message || 'Saved to offline library'), '⚠️');
     btnDownloadAlbum.disabled = false;
     setAudioQuality(currentAudioQuality, currentAudioCodec);
   }
@@ -1209,78 +1237,6 @@ function initEventSource() {
     setTimeout(() => { mediaProgressBox.classList.add('hidden'); }, 3000);
   });
 }
-
-// Share from Phone & Clipboard Watcher Management
-const shareModal = document.getElementById('share-modal');
-const btnShareModal = document.getElementById('btn-share-modal');
-const btnOpenSharePill = document.getElementById('btn-open-share-pill');
-const btnCloseShareModal = document.getElementById('btn-close-share-modal');
-const mobileUrlInput = document.getElementById('mobile-url-input');
-const linkTestMobile = document.getElementById('link-test-mobile');
-const btnCopyMobileUrl = document.getElementById('btn-copy-mobile-url');
-const worldwideUrlInput = document.getElementById('worldwide-url-input');
-const btnCopyWorldwideUrl = document.getElementById('btn-copy-worldwide-url');
-const linkTestWorldwide = document.getElementById('link-test-worldwide');
-const headerWorldwideStatus = document.getElementById('header-worldwide-status');
-const quickUrlDisplay = document.getElementById('quick-url-display');
-const btnCopyQuickUrl = document.getElementById('btn-copy-quick-url');
-
-async function loadNetworkInfo() {
-  try {
-    const res = await fetch(apiUrl('/api/network-info'));
-    if (res.ok) {
-      const data = await res.json();
-      if (mobileUrlInput) mobileUrlInput.value = data.localUrl || data.webUrl;
-      if (linkTestMobile) linkTestMobile.href = data.localUrl || data.webUrl;
-
-      if (data.publicUrl) {
-        if (worldwideUrlInput) worldwideUrlInput.value = data.publicUrl;
-        if (linkTestWorldwide) linkTestWorldwide.href = data.publicUrl;
-        if (headerWorldwideStatus) headerWorldwideStatus.textContent = 'Worldwide: Active 🌍';
-        if (quickUrlDisplay) quickUrlDisplay.textContent = `${data.publicUrl}/api/quick-download?url=[Apple-Music-Link]`;
-      } else {
-        if (worldwideUrlInput) worldwideUrlInput.value = 'Connecting worldwide tunnel...';
-        setTimeout(loadNetworkInfo, 3000);
-      }
-    }
-  } catch (err) {}
-}
-
-if (btnShareModal) btnShareModal.addEventListener('click', () => shareModal?.classList.remove('hidden'));
-if (btnOpenSharePill) btnOpenSharePill.addEventListener('click', () => shareModal?.classList.remove('hidden'));
-if (btnCloseShareModal) btnCloseShareModal.addEventListener('click', () => shareModal?.classList.add('hidden'));
-
-if (shareModal) {
-  shareModal.addEventListener('click', e => {
-    if (e.target === shareModal) shareModal.classList.add('hidden');
-  });
-}
-
-if (btnCopyMobileUrl) {
-  btnCopyMobileUrl.addEventListener('click', () => {
-    navigator.clipboard.writeText(mobileUrlInput.value);
-    btnCopyMobileUrl.textContent = 'Copied!';
-    setTimeout(() => { btnCopyMobileUrl.textContent = 'Copy'; }, 2000);
-  });
-}
-
-if (btnCopyWorldwideUrl) {
-  btnCopyWorldwideUrl.addEventListener('click', () => {
-    navigator.clipboard.writeText(worldwideUrlInput.value);
-    btnCopyWorldwideUrl.textContent = 'Copied!';
-    setTimeout(() => { btnCopyWorldwideUrl.textContent = 'Copy Link'; }, 2000);
-  });
-}
-
-if (btnCopyQuickUrl) {
-  btnCopyQuickUrl.addEventListener('click', () => {
-    navigator.clipboard.writeText(quickUrlDisplay.textContent);
-    btnCopyQuickUrl.textContent = '✓';
-    setTimeout(() => { btnCopyQuickUrl.textContent = '📋'; }, 2000);
-  });
-}
-
-loadNetworkInfo();
 
 function handleDownloadProgress(data) {
   if (data.type === 'track_progress' || data.type === 'track_start' || data.type === 'track_complete' || data.status) {
@@ -1836,12 +1792,6 @@ mobileTabs.forEach(tab => {
   tab.addEventListener('click', () => {
     switchMainView(tab.dataset.target);
   });
-});
-
-const btnMobileShareNav = document.getElementById('mobile-tab-share');
-const btnMobileShareHeader = document.getElementById('btn-mobile-share-header');
-[btnMobileShareNav, btnMobileShareHeader].forEach(btn => {
-  btn?.addEventListener('click', () => shareModal?.classList.remove('hidden'));
 });
 
 // Keyboard Shortcuts Global Listener

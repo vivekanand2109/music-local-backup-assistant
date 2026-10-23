@@ -57,11 +57,6 @@
   to = "/.netlify/functions/download"
   status = 200
 
-[[redirects]]
-  from = "/api/network-info"
-  to = "/.netlify/functions/network-info"
-  status = 200
-
 # Single Page App routing fallback
 [[redirects]]
   from = "/*"

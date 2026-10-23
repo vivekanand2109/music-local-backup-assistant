@@ -72,7 +72,7 @@
           "Synchronized Karaoke Lyrics (.lrc) & ID3 Lyrics Embedding",
           "Ultra-HD 3000px Album Art Embedding",
           "Built-in Glassmorphic Apple Music Player with Live Equalizer",
-          "Worldwide Remote Download to Mac Finder"
+          "Direct Offline Mobile & Desktop Downloads"
         ]
       },
       {
@@ -209,23 +209,12 @@
           <span>Shows & Movies</span>
         </button>
 
-        <div class="nav-section-title">Tools & Remote</div>
+        <div class="nav-section-title">Tools</div>
         <button id="btn-open-finder" class="nav-item">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
           </svg>
           <span>Show in Finder</span>
-        </button>
-
-        <button id="btn-share-modal" class="nav-item">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="18" cy="5" r="3"></circle>
-            <circle cx="6" cy="12" r="3"></circle>
-            <circle cx="18" cy="19" r="3"></circle>
-            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-          </svg>
-          <span>Share From Phone</span>
         </button>
 
         <button id="btn-open-shortcuts" class="nav-item">
@@ -276,7 +265,6 @@
             <span>Appllify</span><span class="brand-accent">Music</span>
           </div>
           <div class="mobile-header-actions">
-            <button id="btn-mobile-share-header" class="mobile-icon-btn" title="Remote Share">📱</button>
             <button id="btn-mobile-settings-header" class="mobile-icon-btn" title="Settings">⚙️</button>
           </div>
         </div>
@@ -321,15 +309,9 @@
           </div>
 
           <div class="finder-location-pill">
-            <span class="finder-badge">Finder</span>
-            <span class="finder-text">Saved to: <strong>Downloads > Apple Music</strong></span>
-            <button id="btn-quick-finder" class="btn-link">Open</button>
+            <span class="finder-badge">Audio</span>
+            <span class="finder-text">Direct Offline Storage</span>
           </div>
-
-          <button id="btn-open-share-pill" class="finder-location-pill pointer">
-            <span class="finder-badge badge-purple">📱 Remote</span>
-            <span class="finder-text">Share Anywhere</span>
-          </button>
         </div>
       </header>
 
@@ -1061,17 +1043,6 @@
       </svg>
       <span>Series</span>
     </button>
-
-    <button id="mobile-tab-share" class="mobile-nav-btn">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-        <circle cx="18" cy="5" r="3"></circle>
-        <circle cx="6" cy="12" r="3"></circle>
-        <circle cx="18" cy="19" r="3"></circle>
-        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-      </svg>
-      <span>Remote</span>
-    </button>
   </nav>
 
   <!-- ========================================================
@@ -1185,79 +1156,6 @@
     </div>
     <div id="lyrics-content" class="lyrics-body">
       <p class="lyrics-placeholder">No lyrics available for this song.</p>
-    </div>
-  </div>
-
-  <!-- Modal: Share From Anywhere -->
-  <div id="share-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="share-modal-title">
-    <div class="modal-card">
-      <div class="modal-header">
-        <div class="modal-title-group">
-          <span class="modal-icon">📲</span>
-          <h3 id="share-modal-title">Share & Download From Anywhere</h3>
-        </div>
-        <button id="btn-close-share-modal" class="btn-icon" aria-label="Close Share Modal">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
-
-      <div class="modal-body">
-        <!-- Worldwide Public Remote URL -->
-        <div class="share-option-card highlight-card">
-          <div class="share-option-header">
-            <div class="option-icon">🌍</div>
-            <div>
-              <h4>Worldwide Remote Access (Share From Anywhere on Earth)</h4>
-              <p>Works anywhere outside your home, on mobile data (4G/5G), work/school PC, friend's laptop:</p>
-            </div>
-          </div>
-          <div class="share-url-box">
-            <input id="worldwide-url-input" type="text" readonly value="Connecting worldwide tunnel..." aria-label="Worldwide URL" />
-            <button id="btn-copy-worldwide-url" class="btn-primary">Copy Link</button>
-            <a id="link-test-worldwide" href="#" target="_blank" rel="noopener" class="btn-secondary link-btn">Open</a>
-          </div>
-          <div class="tip-box">
-            🌐 <strong>Truly Anywhere:</strong> Send links to this address from any phone, computer, or browser in the world. It will download straight into your home Mac's Finder!
-          </div>
-        </div>
-
-        <!-- Phone / Local Wi-Fi Access -->
-        <div class="share-option-card">
-          <div class="share-option-header">
-            <div class="option-icon">📱</div>
-            <div>
-              <h4>Open on your iPhone / Android (Local Wi-Fi)</h4>
-              <p>Connect your phone to the same Wi-Fi network and open:</p>
-            </div>
-          </div>
-          <div class="share-url-box">
-            <input id="mobile-url-input" type="text" readonly value="http://10.221.199.49:3300" aria-label="Mobile Local URL" />
-            <button id="btn-copy-mobile-url" class="btn-secondary">Copy</button>
-            <a id="link-test-mobile" href="http://10.221.199.49:3300" target="_blank" rel="noopener" class="btn-secondary link-btn">Open</a>
-          </div>
-          <div class="tip-box">
-            💡 <strong>Pro-tip:</strong> In Safari on your iPhone, tap <strong>Share</strong> → <strong>"Add to Home Screen"</strong>. It installs as a real Apple Music app on your phone!
-          </div>
-        </div>
-
-        <!-- Apple Shortcut for iOS Share Sheet -->
-        <div class="share-option-card">
-          <div class="share-option-header">
-            <div class="option-icon">⚡</div>
-            <div>
-              <h4>iOS Apple Music Share Sheet</h4>
-              <p>Share directly from the native Apple Music app on iPhone</p>
-            </div>
-          </div>
-          <div class="code-box">
-            <code id="quick-url-display">http://10.221.199.49:3300/api/quick-download?url=[Link]</code>
-            <button id="btn-copy-quick-url" class="btn-copy-icon" title="Copy URL">📋</button>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 
