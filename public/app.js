@@ -555,7 +555,7 @@ function displaySingleMedia(media) {
   }
 
   if (media.artwork) {
-    ambientBackdrop.style.background = `radial-gradient(circle, rgba(252, 60, 68, 0.22) 0%, rgba(0, 0, 0, 0) 70%)`;
+    ambientBackdrop.style.background = `radial-gradient(circle, rgba(168, 85, 247, 0.25) 0%, rgba(9, 9, 15, 0) 70%)`;
   }
 }
 
@@ -716,7 +716,7 @@ function displayAlbum(album) {
 
   // Dynamic ambient backdrop color
   if (album.artwork) {
-    ambientBackdrop.style.background = `radial-gradient(circle, rgba(252, 60, 68, 0.22) 0%, rgba(0, 0, 0, 0) 70%)`;
+    ambientBackdrop.style.background = `radial-gradient(circle, rgba(168, 85, 247, 0.25) 0%, rgba(9, 9, 15, 0) 70%)`;
   }
 
   // Render Tracks
@@ -1720,7 +1720,7 @@ function showToast(message, icon = '✓') {
   if (!container) return;
   const toast = document.createElement('div');
   toast.className = 'toast-message';
-  toast.innerHTML = `<span style="color:#FC3C44;font-size:16px;">${icon}</span><span>${message}</span>`;
+  toast.innerHTML = `<span style="color:#C084FC;font-size:16px;">${icon}</span><span>${message}</span>`;
   container.appendChild(toast);
   setTimeout(() => {
     toast.style.opacity = '0';
