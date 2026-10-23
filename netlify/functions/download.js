@@ -48,74 +48,62 @@ exports.handler = async function(event, context) {
     const filename = `${cleanFileName(artist)} - ${cleanFileName(title)}.mp3`;
 
     // 1. Direct preview / CDN stream if present
-    if (previewUrl && previewUrl.startsWith('http')) {
-      const audioRes = await fetch(previewUrl);
-      if (audioRes.ok) {
-        const buffer = await audioRes.arrayBuffer();
-        return {
-          statusCode: 200,
-          headers: {
-            ...headers,
-            'Content-Type': 'audio/mpeg',
-            'Content-Disposition': `attachment; filename="${filename}"`,
-            'Content-Length': String(buffer.byteLength)
-          },
-          body: Buffer.from(buffer).toString('base64'),
-          isBase64Encoded: true
-        };
-      }
-    }
-
-    // 2. JioSaavn Direct CDN resolution
-    if (/jiosaavn\.com|saavn\.com/i.test(url) || platform === 'jiosaavn') {
+    if (!previewUrl || !previewUrl.startsWith('http')) {
       try {
-        const pageRes = await fetch(url, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
-          }
-        });
-        if (pageRes.ok) {
-          const html = await pageRes.text();
-          const pidMatch = html.match(/"pid":"([a-zA-Z0-9_-]+)"/) || html.match(/"id":"([a-zA-Z0-9_-]+)"/);
-          if (pidMatch) {
-            const pid = pidMatch[1];
-            const apiRes = await fetch(`https://www.jiosaavn.com/api.php?__call=song.getDetails&pids=${pid}&_format=json&_marker=0&ctx=web6dot0`);
-            if (apiRes.ok) {
-              const j = await apiRes.json();
-              const song = j[pid];
-              if (song) {
-                let streamUrl = song.media_preview_url;
-                if (song.encrypted_media_url) {
-                  try {
-                    const key = Buffer.from('38346591', 'utf-8');
-                    const decipher = crypto.createDecipheriv('des-ecb', key, '');
-                    let dec = decipher.update(song.encrypted_media_url, 'base64', 'utf-8');
-                    dec += decipher.final('utf-8');
-                    streamUrl = dec;
-                  } catch (e) {}
-                }
-
-                if (streamUrl) {
-                  // Redirect directly to high-speed CDN audio stream with download
-                  return {
-                    statusCode: 302,
-                    headers: {
-                      ...headers,
-                      'Location': streamUrl
-                    },
-                    body: ''
-                  };
-                }
-              }
+        const searchQuery = query || `${artist} ${title}`;
+        const itunesApi = `https://itunes.apple.com/search?term=${encodeURIComponent(searchQuery)}&entity=song&limit=1`;
+        const iRes = await fetch(itunesApi, { headers: { 'Accept': 'application/json' } });
+        if (iRes.ok) {
+          const iData = await iRes.json();
+          if (iData.results && iData.results.length > 0) {
+            const first = iData.results[0];
+            if (first.previewUrl) {
+              previewUrl = first.previewUrl;
             }
           }
         }
-      } catch (err) {
-        console.warn('JioSaavn direct download fallback:', err);
+      } catch (e) {
+        console.warn('iTunes audio stream resolution failed:', e.message);
       }
     }
 
-    // 3. Fallback: Generate an audio response or high-speed stream redirect
+    // 2. Fetch and stream the audio binary as download attachment
+    if (previewUrl && previewUrl.startsWith('http')) {
+      try {
+        const audioRes = await fetch(previewUrl);
+        if (audioRes.ok) {
+          const buffer = await audioRes.arrayBuffer();
+          return {
+            statusCode: 200,
+            headers: {
+              ...headers,
+              'Content-Type': 'audio/mpeg',
+              'Content-Disposition': `attachment; filename="${filename}"`,
+              'Content-Length': String(buffer.byteLength),
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Access-Control-Expose-Headers': 'Content-Disposition, Content-Length'
+            },
+            body: Buffer.from(buffer).toString('base64'),
+            isBase64Encoded: true
+          };
+        }
+      } catch (err) {
+        console.warn('Direct stream fetch error:', err.message);
+      }
+    }
+
+    // 3. Fallback: Provide direct stream redirect
+    if (previewUrl) {
+      return {
+        statusCode: 302,
+        headers: {
+          ...headers,
+          'Location': previewUrl
+        },
+        body: ''
+      };
+    }
+
     return {
       statusCode: 200,
       headers: {
@@ -124,7 +112,7 @@ exports.handler = async function(event, context) {
       },
       body: JSON.stringify({
         success: true,
-        message: 'Download link ready',
+        message: 'Download ready',
         title: title,
         artist: artist,
         filename: filename,
