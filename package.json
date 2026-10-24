@@ -5,6 +5,7 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
+    "test": "node tests/security.test.js",
     "postinstall": "node scripts/install-ytdlp.js"
   },
   "dependencies": {

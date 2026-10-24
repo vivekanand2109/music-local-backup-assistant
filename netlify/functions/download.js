@@ -1,11 +1,13 @@
 // Netlify Serverless Function: /api/download & /api/download-media
-// Streams or downloads audio directly to user's mobile phone or PC
+// Secure audio delivery with token validation, audio-host allowlisting, and SSRF prevention
 
-const crypto = require('crypto');
-
-function cleanFileName(str) {
-  return (str || 'Track').replace(/[/\\?%*:|"<>]/g, '_').trim();
-}
+const {
+  ALLOWED_AUDIO_HOSTS,
+  safeFetch,
+  verifyDownloadToken,
+  cleanFileName,
+  isPrivateOrReservedHost
+} = require('./utils/security');
 
 exports.handler = async function(event, context) {
   const headers = {
@@ -22,57 +24,137 @@ exports.handler = async function(event, context) {
     let title = 'Audio Track';
     let artist = 'Appllify Music';
     let query = '';
-    let platform = '';
     let previewUrl = '';
-    let url = '';
+    let downloadToken = '';
 
     if (event.httpMethod === 'POST' && event.body) {
-      const data = JSON.parse(event.body);
-      const item = data.item || data.track || data;
-      title = item.title || item.name || title;
-      artist = item.artist || item.subtitle || artist;
-      query = item.searchQuery || `${artist} - ${title}`;
-      platform = item.platform || '';
-      previewUrl = item.previewUrl || '';
-      url = item.url || data.url || '';
+      try {
+        const data = JSON.parse(event.body);
+        const item = data.item || data.track || data;
+        title = item.title || item.name || title;
+        artist = item.artist || item.subtitle || artist;
+        query = item.searchQuery || `${artist} - ${title}`;
+        previewUrl = item.previewUrl || '';
+        downloadToken = item.downloadToken || data.downloadToken || '';
+      } catch (e) {
+        return {
+          statusCode: 400,
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ success: false, error: 'Invalid JSON request body.' })
+        };
+      }
     } else if (event.queryStringParameters) {
       const q = event.queryStringParameters;
       title = q.title || title;
       artist = q.artist || artist;
       query = q.q || `${artist} - ${title}`;
-      platform = q.platform || '';
       previewUrl = q.preview || '';
-      url = q.url || '';
+      downloadToken = q.token || '';
     }
 
     const filename = `${cleanFileName(artist)} - ${cleanFileName(title)}.mp3`;
 
-    // 1. Direct preview / CDN stream if present
-    if (!previewUrl || !previewUrl.startsWith('http') || /saavncdn\.com/i.test(previewUrl)) {
+    // 1. SSRF & Host Validation on visitor-supplied previewUrl
+    if (previewUrl) {
+      let parsedPreview;
       try {
-        const searchQuery = query || `${artist} ${title}`;
-        const itunesApi = `https://itunes.apple.com/search?term=${encodeURIComponent(searchQuery)}&entity=song&limit=1`;
-        const iRes = await fetch(itunesApi, { headers: { 'Accept': 'application/json' } });
-        if (iRes.ok) {
-          const iData = await iRes.json();
-          if (iData.results && iData.results.length > 0) {
-            const first = iData.results[0];
-            if (first.previewUrl) {
-              previewUrl = first.previewUrl;
+        parsedPreview = new URL(previewUrl);
+      } catch (e) {
+        return {
+          statusCode: 400,
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ success: false, error: 'Malformed audio stream URL.' })
+        };
+      }
+
+      // Strictly reject non-HTTPS
+      if (parsedPreview.protocol !== 'https:') {
+        return {
+          statusCode: 400,
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ success: false, error: 'Audio stream must be HTTPS.' })
+        };
+      }
+
+      // Reject non-standard ports or credentials
+      if ((parsedPreview.port && parsedPreview.port !== '443') || parsedPreview.username || parsedPreview.password) {
+        return {
+          statusCode: 400,
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ success: false, error: 'Invalid audio URL parameters.' })
+        };
+      }
+
+      const host = parsedPreview.hostname.toLowerCase();
+
+      // Strictly reject private, loopback, link-local, and reserved IP addresses
+      if (isPrivateOrReservedHost(host)) {
+        return {
+          statusCode: 403,
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ success: false, error: 'Access to private or local network resources is forbidden.' })
+        };
+      }
+
+      // Verify whether the host is in authorized audio hosts
+      if (!ALLOWED_AUDIO_HOSTS.has(host)) {
+        // Discard untrusted third-party stream URL, reset previewUrl to resolve via official iTunes Search CDN
+        previewUrl = '';
+      } else if (downloadToken) {
+        // If a token is provided, verify it
+        const tokenCheck = verifyDownloadToken(downloadToken, previewUrl);
+        if (!tokenCheck.valid) {
+          // Token signature invalid or expired
+          previewUrl = '';
+        }
+      }
+    }
+
+    // 2. Direct preview resolution via official iTunes Search API CDN if previewUrl is empty
+    if (!previewUrl) {
+      try {
+        const sanitizedTerm = (query || `${artist} ${title}`)
+          .replace(/[^a-zA-Z0-9 ]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .slice(0, 80);
+
+        if (sanitizedTerm) {
+          const itunesApi = `https://itunes.apple.com/search?term=${encodeURIComponent(sanitizedTerm)}&entity=song&limit=1`;
+          const iRes = await safeFetch(itunesApi, {
+            headers: { 'Accept': 'application/json' },
+            maxBytes: 512 * 1024
+          });
+
+          if (iRes.ok) {
+            const iData = await iRes.json();
+            if (iData.results && iData.results.length > 0) {
+              const first = iData.results[0];
+              if (first.previewUrl) {
+                const u = new URL(first.previewUrl);
+                if (ALLOWED_AUDIO_HOSTS.has(u.hostname.toLowerCase())) {
+                  previewUrl = first.previewUrl;
+                }
+              }
             }
           }
         }
       } catch (e) {
-        console.warn('iTunes audio stream resolution failed:', e.message);
+        console.warn('iTunes audio stream resolution failed');
       }
     }
 
-    // 2. Fetch and stream the audio binary as download attachment
-    if (previewUrl && previewUrl.startsWith('http')) {
+    // 3. Fetch and stream the audio binary using safeFetch
+    if (previewUrl) {
       try {
-        const audioRes = await fetch(previewUrl);
+        const audioRes = await safeFetch(previewUrl, {
+          allowedHosts: ALLOWED_AUDIO_HOSTS,
+          maxBytes: 15 * 1024 * 1024, // 15MB limit for audio streams
+          timeoutMs: 8000
+        });
+
         if (audioRes.ok) {
-          const buffer = await audioRes.arrayBuffer();
+          const buffer = await audioRes.buffer();
           return {
             statusCode: 200,
             headers: {
@@ -83,27 +165,16 @@ exports.handler = async function(event, context) {
               'Cache-Control': 'no-cache, no-store, must-revalidate',
               'Access-Control-Expose-Headers': 'Content-Disposition, Content-Length'
             },
-            body: Buffer.from(buffer).toString('base64'),
+            body: buffer.toString('base64'),
             isBase64Encoded: true
           };
         }
       } catch (err) {
-        console.warn('Direct stream fetch error:', err.message);
+        console.warn('Safe audio stream fetch error:', err.message);
       }
     }
 
-    // 3. Fallback: Provide direct stream redirect
-    if (previewUrl) {
-      return {
-        statusCode: 302,
-        headers: {
-          ...headers,
-          'Location': previewUrl
-        },
-        body: ''
-      };
-    }
-
+    // 4. Fallback: Return structured JSON response (Never open-redirect!)
     return {
       statusCode: 200,
       headers: {
@@ -111,22 +182,26 @@ exports.handler = async function(event, context) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        success: true,
-        message: 'Download ready',
+        success: Boolean(previewUrl),
         title: title,
         artist: artist,
         filename: filename,
-        downloadUrl: previewUrl || url
+        message: previewUrl ? 'Audio stream available.' : 'Audio preview is not available for this track.'
       })
     };
   } catch (err) {
+    // Sanitize error: never leak system information or stack traces
+    console.error('Download handler error:', err.message);
     return {
       statusCode: 500,
       headers: {
         ...headers,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ success: false, error: err.message })
+      body: JSON.stringify({
+        success: false,
+        error: 'Unable to process download request at this time.'
+      })
     };
   }
 };

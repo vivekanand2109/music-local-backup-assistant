@@ -927,11 +927,13 @@ async function downloadSingleTrackAction(track, idx) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           item: {
+            id: track.id,
             title: track.title,
             artist: track.artist || currentAlbum?.artist,
             album: currentAlbum?.title,
             artwork: track.artwork || currentAlbum?.artwork,
             previewUrl: track.previewUrl,
+            downloadToken: track.downloadToken,
             url: track.url,
             searchQuery: track.searchQuery || `${track.artist || currentAlbum?.artist} - ${track.title}`
           },
@@ -946,11 +948,13 @@ async function downloadSingleTrackAction(track, idx) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           item: {
+            id: track.id,
             title: track.title,
             artist: track.artist || currentAlbum?.artist,
             album: currentAlbum?.title,
             artwork: track.artwork || currentAlbum?.artwork,
             previewUrl: track.previewUrl,
+            downloadToken: track.downloadToken,
             url: track.url,
             searchQuery: track.searchQuery || `${track.artist || currentAlbum?.artist} - ${track.title}`
           },
