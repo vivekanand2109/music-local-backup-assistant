@@ -561,6 +561,52 @@ body {
   transform: scale(0.98);
 }
 
+.btn-play-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(168, 85, 247, 0.18);
+  color: #C084FC;
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-right: 6px;
+  transition: all 0.2s ease;
+}
+
+.btn-play-action:hover {
+  background: #A855F7;
+  color: #FFFFFF;
+  box-shadow: 0 4px 16px rgba(168, 85, 247, 0.45);
+  transform: translateY(-1px);
+}
+
+.btn-play-large {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(168, 85, 247, 0.2);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  color: #FFFFFF;
+  border-radius: 12px;
+  padding: 12px 22px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-play-large:hover {
+  background: #A855F7;
+  color: #FFFFFF;
+  box-shadow: 0 4px 20px rgba(168, 85, 247, 0.5);
+  transform: translateY(-1px);
+}
+
 /* Welcome State */
 .welcome-card {
   margin: 60px auto;
@@ -2814,6 +2860,14 @@ body {
     width: 100%;
     padding: 12px;
     border-radius: 12px;
+  }
+
+  .input-container .btn-play-action {
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
+    border-radius: 12px;
+    margin-right: 0;
   }
 
   .header-pills-row {

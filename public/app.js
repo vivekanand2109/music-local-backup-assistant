@@ -16,6 +16,15 @@ function getDirectDownloadUrl(track) {
   return apiUrl(`/api/download?title=${title}&artist=${artist}&preview=${preview}&token=${token}&q=${query}`);
 }
 
+// Resolve playable audio URL (uses native preview CDN if available, or direct high-speed /api/download stream)
+function getPlayableAudioUrl(track) {
+  if (!track) return '';
+  if (track.previewUrl && typeof track.previewUrl === 'string' && track.previewUrl.startsWith('http')) {
+    return track.previewUrl;
+  }
+  return getDirectDownloadUrl(track);
+}
+
 // Directly trigger native browser file download (bypasses async popup blockers)
 function triggerBrowserDownload(url, filename) {
   if (!url || url === '#') return;
@@ -316,6 +325,63 @@ btnFetch.addEventListener('click', () => {
   if (url) fetchAlbumFromUrl(url);
 });
 
+// Direct Link Play Button
+const btnPlayLink = document.getElementById('btn-play-link');
+if (btnPlayLink) {
+  btnPlayLink.addEventListener('click', async () => {
+    const url = urlInput?.value?.trim();
+    if (!url) {
+      showToast('Please paste a music link first!', '⚠️');
+      urlInput?.focus();
+      return;
+    }
+
+    btnPlayLink.disabled = true;
+    const span = document.getElementById('text-play-link');
+    if (span) span.textContent = 'Loading...';
+
+    try {
+      showToast('🔍 Inspecting stream for playback...', '⏳');
+      let res;
+      try {
+        res = await fetch(apiUrl('/api/inspect-link'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+      } catch (netErr) {
+        res = await fetch('https://appllifymusic.netlify.app/api/inspect-link', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+      }
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to inspect link.');
+      }
+
+      const media = data.media;
+      pendingInspectedMedia = media;
+
+      if (media.type === 'album' || media.type === 'playlist') {
+        proceedWithInspectedMedia(media);
+        playTrackFromCurrentAlbum(0);
+      } else {
+        proceedWithInspectedMedia(media);
+        playMedia(media);
+      }
+    } catch (err) {
+      console.warn('Play link error:', err);
+      showToast(err.message || 'Unable to play link. Please check URL.', '⚠️');
+    } finally {
+      btnPlayLink.disabled = false;
+      if (span) span.textContent = 'Play';
+    }
+  });
+}
+
 urlInput.addEventListener('keydown', e => {
   if (e.key === 'Enter') {
     const url = urlInput.value.trim();
@@ -480,6 +546,23 @@ if (btnProceedDownload) {
   });
 }
 
+// Play Online Button inside Preview Confirmation Modal
+const btnPreviewPlayOnline = document.getElementById('btn-preview-play-online');
+if (btnPreviewPlayOnline) {
+  btnPreviewPlayOnline.addEventListener('click', () => {
+    if (!pendingInspectedMedia) return;
+    const media = pendingInspectedMedia;
+    previewConfirmModal?.classList.add('hidden');
+    proceedWithInspectedMedia(media);
+
+    if (media.type === 'album' || media.type === 'playlist') {
+      playTrackFromCurrentAlbum(0);
+    } else {
+      playMedia(media);
+    }
+  });
+}
+
 [btnCloseConfirmModal, btnCancelConfirm].forEach(btn => {
   btn?.addEventListener('click', () => {
     previewConfirmModal?.classList.add('hidden');
@@ -617,6 +700,13 @@ function displaySingleMedia(media) {
     directSaveBtn.innerHTML = `<span>⬇️ Direct Download "${media.title}" (.MP3)</span>`;
     directSaveBtn.classList.remove('hidden');
   }
+
+  // Sync Play Online button state
+  const singlePlayText = document.getElementById('text-single-play-online');
+  if (singlePlayText) {
+    const isThisTrackPlaying = isPlaying && currentPlaylist.length > 0 && currentPlaylist[0].title === media.title;
+    singlePlayText.textContent = isThisTrackPlaying ? '⏸ Pause' : '▶ Play Online';
+  }
 }
 
 // Download Single Media Action
@@ -691,6 +781,25 @@ async function cancelActiveDownload() {
 if (btnCancelSingleMedia) btnCancelSingleMedia.addEventListener('click', cancelActiveDownload);
 if (btnCancelAlbum) btnCancelAlbum.addEventListener('click', cancelActiveDownload);
 if (btnCancelQueue) btnCancelQueue.addEventListener('click', cancelActiveDownload);
+
+// Play Single Track Online button
+const btnSinglePlayOnline = document.getElementById('btn-play-single-track');
+if (btnSinglePlayOnline) {
+  btnSinglePlayOnline.addEventListener('click', () => {
+    if (!currentSingleMedia) return;
+    if (audioEngine.src && currentPlaylist.length > 0 && currentPlaylist[0].title === currentSingleMedia.title) {
+      if (audioEngine.paused) {
+        audioEngine.play();
+        setPlayingState(true);
+      } else {
+        audioEngine.pause();
+        setPlayingState(false);
+      }
+    } else {
+      playMedia(currentSingleMedia);
+    }
+  });
+}
 
 if (btnDownloadMp3) {
   btnDownloadMp3.addEventListener('click', () => downloadMediaAction('mp3'));
@@ -1253,15 +1362,32 @@ function handleDownloadProgress(data) {
 initEventSource();
 
 // Audio Player & Playback Logic
-function playTrackFromCurrentAlbum(idx) {
-  if (!currentAlbum || !currentAlbum.tracks[idx]) return;
+function playMedia(media) {
+  if (!media) return;
+  const audioSrc = getPlayableAudioUrl(media);
+  currentPlaylist = [{
+    title: media.title || 'Track',
+    artist: media.artist || 'Artist',
+    album: media.album || 'Single',
+    artwork: media.artwork,
+    previewUrl: media.previewUrl,
+    streamUrl: audioSrc,
+    lyricsUrl: media.lyricsUrl
+  }];
+  loadTrack(0);
+}
 
-  currentPlaylist = currentAlbum.tracks.map(t => ({
+function playTrackFromCurrentAlbum(idx) {
+  if (!currentAlbum) return;
+  const tracks = Array.isArray(currentAlbum.tracks) ? currentAlbum.tracks : [];
+  if (!tracks[idx]) return;
+
+  currentPlaylist = tracks.map((t) => ({
     title: t.title,
-    artist: t.artist,
+    artist: t.artist || currentAlbum.artist,
     album: currentAlbum.title,
-    artwork: currentAlbum.artwork,
-    streamUrl: t.streamUrl || `/api/stream?artist=${encodeURIComponent(currentAlbum.artist)}&album=${encodeURIComponent(currentAlbum.title)}&file=${encodeURIComponent(t.filename || '')}`,
+    artwork: t.artwork || currentAlbum.artwork,
+    streamUrl: getPlayableAudioUrl(t),
     previewUrl: t.previewUrl,
     lyricsUrl: t.lyricsUrl
   }));
@@ -1274,16 +1400,23 @@ function loadTrack(idx) {
   currentTrackIndex = idx;
   const track = currentPlaylist[idx];
 
+  // Ensure bottom player bar is visible
+  const playerBar = document.getElementById('app-player-bar');
+  if (playerBar) {
+    playerBar.classList.remove('hidden');
+    playerBar.style.display = 'flex';
+  }
+
   // Update Player Bar
-  playerTitle.textContent = track.title;
-  playerArtist.textContent = track.artist;
-  playerArt.src = track.artwork || 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23222%22/></svg>';
+  if (playerTitle) playerTitle.textContent = track.title || 'Unknown Title';
+  if (playerArtist) playerArtist.textContent = track.artist || 'Unknown Artist';
+  if (playerArt) {
+    playerArt.src = track.artwork || 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23222%22/></svg>';
+  }
 
   const playerQualityBadge = document.getElementById('player-quality-badge');
   if (playerQualityBadge) {
-    const q = (track.audioQuality || (currentAudioQuality === 'hires' ? 'Hi-Res Lossless' : (currentAudioQuality === 'lossless' ? 'Lossless' : 'High Quality'))).toUpperCase();
-    playerQualityBadge.textContent = q;
-    playerQualityBadge.className = 'player-quality-pill ' + (q.includes('HI-RES') ? 'hires' : '');
+    playerQualityBadge.textContent = 'STREAMING (320K)';
     playerQualityBadge.classList.remove('hidden');
   }
 
@@ -1292,13 +1425,15 @@ function loadTrack(idx) {
   const row = document.getElementById(`track-row-${idx}`);
   if (row) row.classList.add('playing');
 
-  // Use local stream if available, otherwise Apple Music official previewUrl
-  const audioSrc = track.streamUrl && track.filename ? apiUrl(track.streamUrl) : (track.previewUrl || apiUrl(track.streamUrl));
+  // Direct playable stream URL: Preview CDN or /api/download audio stream
+  const audioSrc = track.previewUrl || track.streamUrl || getPlayableAudioUrl(track);
   audioEngine.src = audioSrc;
   audioEngine.play().then(() => {
     setPlayingState(true);
-  }).catch(() => {
-    // Autoplay blocked or wait for user interaction
+    showToast(`▶ Now Playing: "${track.title}"`, '🎵');
+  }).catch((err) => {
+    console.warn('Audio play notice:', err.message);
+    setPlayingState(false);
   });
 
   // Load lyrics
@@ -1308,11 +1443,21 @@ function loadTrack(idx) {
 function setPlayingState(playing) {
   isPlaying = playing;
   if (playing) {
-    iconPlay.classList.add('hidden');
-    iconPause.classList.remove('hidden');
+    iconPlay?.classList.add('hidden');
+    iconPause?.classList.remove('hidden');
   } else {
-    iconPlay.classList.remove('hidden');
-    iconPause.classList.add('hidden');
+    iconPlay?.classList.remove('hidden');
+    iconPause?.classList.add('hidden');
+  }
+
+  const singlePlayText = document.getElementById('text-single-play-online');
+  if (singlePlayText) {
+    singlePlayText.textContent = playing ? '⏸ Pause' : '▶ Play Online';
+  }
+
+  const previewPlayText = document.getElementById('text-preview-play-online');
+  if (previewPlayText) {
+    previewPlayText.textContent = playing ? '⏸ Pause' : '▶ Play Online';
   }
 
   const playerEqualizer = document.getElementById('player-equalizer');
