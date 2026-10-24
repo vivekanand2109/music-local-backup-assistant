@@ -33,7 +33,7 @@ exports.handler = async function(event, context) {
         const item = data.item || data.track || data;
         title = item.title || item.name || title;
         artist = item.artist || item.subtitle || artist;
-        query = item.searchQuery || `${artist} - ${title}`;
+        query = item.searchQuery || data.query || `${artist} - ${title}`;
         previewUrl = item.previewUrl || '';
         downloadToken = item.downloadToken || data.downloadToken || '';
       } catch (e) {
@@ -101,10 +101,8 @@ exports.handler = async function(event, context) {
         // Discard untrusted third-party stream URL, reset previewUrl to resolve via official iTunes Search CDN
         previewUrl = '';
       } else if (downloadToken) {
-        // If a token is provided, verify it
         const tokenCheck = verifyDownloadToken(downloadToken, previewUrl);
         if (!tokenCheck.valid) {
-          // Token signature invalid or expired
           previewUrl = '';
         }
       }
@@ -113,7 +111,19 @@ exports.handler = async function(event, context) {
     // 2. Direct preview resolution via official iTunes Search API CDN if previewUrl is empty
     if (!previewUrl) {
       try {
-        const sanitizedTerm = (query || `${artist} ${title}`)
+        const cleanTitle = (title || '').replace(/\b(audio|official|video|lyrics|ft|feat|remix|hd|hq|curated playlist|playlist)\b/gi, '').trim();
+        const cleanArtist = (artist || '').replace(/\b(Curated Playlist|Spotify Artist|Apple Music|YouTube Creator|Universal|Artist)\b/gi, '').trim();
+
+        let searchCandidate = '';
+        if (cleanTitle && cleanArtist) {
+          searchCandidate = `${cleanTitle} ${cleanArtist}`;
+        } else if (cleanTitle) {
+          searchCandidate = cleanTitle;
+        } else {
+          searchCandidate = query || `${artist} ${title}`;
+        }
+
+        const sanitizedTerm = searchCandidate
           .replace(/[^a-zA-Z0-9 ]/g, ' ')
           .replace(/\s+/g, ' ')
           .trim()
@@ -140,7 +150,7 @@ exports.handler = async function(event, context) {
           }
         }
       } catch (e) {
-        console.warn('iTunes audio stream resolution failed');
+        console.warn('iTunes audio stream resolution failed:', e.message);
       }
     }
 
@@ -174,23 +184,21 @@ exports.handler = async function(event, context) {
       }
     }
 
-    // 4. Fallback: Return structured JSON response (Never open-redirect!)
+    // 4. Fallback: If no audio stream is available, return 404 with informative error
     return {
-      statusCode: 200,
+      statusCode: 404,
       headers: {
         ...headers,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        success: Boolean(previewUrl),
+        success: false,
         title: title,
         artist: artist,
-        filename: filename,
-        message: previewUrl ? 'Audio stream available.' : 'Audio preview is not available for this track.'
+        error: `Audio preview stream is currently unavailable for "${title}".`
       })
     };
   } catch (err) {
-    // Sanitize error: never leak system information or stack traces
     console.error('Download handler error:', err.message);
     return {
       statusCode: 500,

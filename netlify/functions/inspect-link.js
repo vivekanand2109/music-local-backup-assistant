@@ -36,9 +36,114 @@ function detectPlatform(hostname) {
   return null;
 }
 
-// 1. Apple Music via iTunes Search API
+// 1. Apple Music via iTunes Search API & Playlist Scraping
 async function inspectAppleMusic(parsedUrl) {
   const urlStr = parsedUrl.toString();
+
+  // A. Check for Apple Music Playlist
+  if (parsedUrl.pathname.includes('/playlist/')) {
+    try {
+      const pageRes = await safeFetch(urlStr, { maxBytes: 4 * 1024 * 1024, timeoutMs: 12000 });
+      if (pageRes.ok) {
+        const html = await pageRes.text();
+        const m = html.match(/<script[^>]*id=\"serialized-server-data\"[^>]*>([\s\S]*?)<\/script>/);
+        if (m) {
+          const sData = JSON.parse(m[1]);
+          const payload = sData.data?.['0']?.data;
+          if (payload) {
+            const headerSec = payload.sections?.find(s => s.items && s.items[0]?.title);
+            const playlistTitle = headerSec?.items?.[0]?.title || 'Apple Music Playlist';
+            const playlistArt = (headerSec?.items?.[0]?.artwork?.dictionary?.url || '')
+              .replace('{w}x{h}bb.{f}', '1000x1000bb.jpg')
+              .replace('{w}x{h}mv.{f}', '1000x1000bb.jpg');
+
+            const trackSection = payload.sections?.find(s => s.items && s.items.length > 5);
+            const rawItems = trackSection?.items || [];
+            if (rawItems.length > 0) {
+              const tracks = rawItems.map((item, idx) => {
+                const durMs = item.duration || 210000;
+                const trackId = String(item.id || idx + 1);
+                return {
+                  id: trackId,
+                  trackNumber: item.trackNumber || idx + 1,
+                  title: item.title || `Track ${idx + 1}`,
+                  artist: item.artistName || 'Artist',
+                  album: playlistTitle,
+                  artwork: playlistArt || 'https://appllifymusic.netlify.app/og-banner.png',
+                  durationMs: durMs,
+                  durationString: formatTime(durMs / 1000),
+                  sizeFormatted: '~8.4 MB',
+                  previewUrl: null, // Resolved safely via iTunes search CDN
+                  downloadToken: generateDownloadToken(trackId, null),
+                  url: urlStr,
+                  searchQuery: `${item.title} ${item.artistName || ''}`.trim()
+                };
+              });
+
+              return {
+                platform: 'apple_music',
+                platformName: 'Apple Music',
+                platformIcon: '🍎',
+                type: 'playlist',
+                id: `pl_${Date.now()}`,
+                title: playlistTitle,
+                artist: 'Apple Music Curated',
+                artwork: playlistArt || 'https://appllifymusic.netlify.app/og-banner.png',
+                genre: 'Top Hits',
+                year: '2024',
+                tracks: tracks,
+                totalTracks: tracks.length,
+                totalDurationMs: tracks.reduce((a, b) => a + b.durationMs, 0),
+                totalSizeFormatted: `~${tracks.length * 8} MB`,
+                url: urlStr,
+                mediaFormats: ['mp3', 'alac', 'flac']
+              };
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Apple Music playlist extraction failed, falling back:', e.message);
+    }
+
+    const nameMatch = parsedUrl.pathname.match(/\/playlist\/([^/]+)/);
+    const rawName = nameMatch ? nameMatch[1].replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Apple Music Playlist';
+    const fallbackTrack = {
+      id: `pl_${Date.now()}`,
+      trackNumber: 1,
+      title: rawName,
+      artist: 'Apple Music Curated',
+      album: rawName,
+      artwork: 'https://appllifymusic.netlify.app/og-banner.png',
+      durationMs: 210000,
+      durationString: '3:30',
+      sizeFormatted: '~8.4 MB',
+      previewUrl: null,
+      downloadToken: generateDownloadToken(`pl_${Date.now()}`, null),
+      url: urlStr,
+      searchQuery: `${rawName} Apple Music`.trim()
+    };
+    return {
+      platform: 'apple_music',
+      platformName: 'Apple Music',
+      platformIcon: '🍎',
+      type: 'playlist',
+      id: `pl_${Date.now()}`,
+      title: rawName,
+      artist: 'Apple Music Curated',
+      artwork: 'https://appllifymusic.netlify.app/og-banner.png',
+      genre: 'Playlist',
+      year: '2024',
+      tracks: [fallbackTrack],
+      totalTracks: 1,
+      totalDurationMs: 210000,
+      totalSizeFormatted: '~8.4 MB',
+      url: urlStr,
+      mediaFormats: ['mp3', 'alac', 'flac']
+    };
+  }
+
+  // B. Album / Song Lookup via iTunes API
   const songParam = parsedUrl.searchParams.get('i');
   const albumMatch = parsedUrl.pathname.match(/album\/(?:[^/]+\/)?([0-9]+)/);
   const rawId = songParam || (albumMatch ? albumMatch[1] : null);
@@ -95,7 +200,7 @@ async function inspectAppleMusic(parsedUrl) {
         previewUrl: previewUrl,
         downloadToken: generateDownloadToken(trackId, previewUrl),
         url: t.trackViewUrl || urlStr,
-        searchQuery: `${t.artistName || parentCollection.artistName} - ${t.trackName} audio`
+        searchQuery: `${t.trackName} ${t.artistName || parentCollection.artistName}`.trim()
       };
     });
 
@@ -128,7 +233,7 @@ async function inspectAppleMusic(parsedUrl) {
         previewUrl: firstPreview,
         downloadToken: generateDownloadToken(albumId, firstPreview),
         url: urlStr,
-        searchQuery: `${parentCollection.artistName} - ${parentCollection.collectionName} audio`
+        searchQuery: `${parentCollection.collectionName} ${parentCollection.artistName}`.trim()
       }],
       totalTracks: tracks.length || 1,
       totalDurationMs: totalDurationMs || 210000,
@@ -146,12 +251,9 @@ async function inspectAppleMusic(parsedUrl) {
     const trackId = String(track.trackId || rawId);
     const previewUrl = track.previewUrl || null;
 
-    return {
-      platform: 'apple_music',
-      platformName: 'Apple Music',
-      platformIcon: '🍎',
-      type: 'track',
+    const singleTrackObj = {
       id: trackId,
+      trackNumber: 1,
       title: track.trackName || track.collectionName,
       artist: track.artistName,
       album: track.collectionName || track.trackName,
@@ -163,8 +265,17 @@ async function inspectAppleMusic(parsedUrl) {
       previewUrl: previewUrl,
       downloadToken: generateDownloadToken(trackId, previewUrl),
       url: track.trackViewUrl || urlStr,
-      searchQuery: `${track.artistName} - ${track.trackName} audio`,
+      searchQuery: `${track.trackName} ${track.artistName}`.trim(),
       mediaFormats: ['mp3', 'alac', 'flac']
+    };
+
+    return {
+      ...singleTrackObj,
+      platform: 'apple_music',
+      platformName: 'Apple Music',
+      platformIcon: '🍎',
+      type: 'track',
+      tracks: [singleTrackObj]
     };
   }
 }
@@ -187,12 +298,9 @@ async function inspectJioSaavn(parsedUrl) {
         const artwork = (item.image || '').replace('150x150', '500x500');
         const durSec = parseInt(item.duration, 10) || 240;
         const trackId = String(item.id || `jiosaavn_${Date.now()}`);
-        return {
-          platform: 'jiosaavn',
-          platformName: 'JioSaavn',
-          platformIcon: '🟢',
-          type: 'track',
+        const singleTrack = {
           id: trackId,
+          trackNumber: 1,
           title: item.song || rawSlug || 'JioSaavn Track',
           artist: item.primary_artists || item.singers || 'JioSaavn Artist',
           album: item.album || item.song || 'JioSaavn',
@@ -202,10 +310,19 @@ async function inspectJioSaavn(parsedUrl) {
           url: urlStr,
           previewUrl: null, // Audio fetched safely via iTunes search CDN
           downloadToken: generateDownloadToken(trackId, null),
-          searchQuery: `${item.primary_artists || ''} - ${item.song || rawSlug} audio`,
+          searchQuery: `${item.song || rawSlug} ${item.primary_artists || ''}`.trim(),
           mediaFormats: ['mp3'],
           sizeFormatted: '~9.6 MB',
           estimatedSizes: { mp3: '~9.6 MB' }
+        };
+
+        return {
+          ...singleTrack,
+          platform: 'jiosaavn',
+          platformName: 'JioSaavn',
+          platformIcon: '🟢',
+          type: 'track',
+          tracks: [singleTrack]
         };
       }
     }
@@ -215,12 +332,9 @@ async function inspectJioSaavn(parsedUrl) {
 
   const title = rawSlug ? rawSlug.replace(/\b\w/g, l => l.toUpperCase()) : 'JioSaavn Track';
   const trackId = `jiosaavn_${Date.now()}`;
-  return {
-    platform: 'jiosaavn',
-    platformName: 'JioSaavn',
-    platformIcon: '🟢',
-    type: 'track',
+  const fallbackTrack = {
     id: trackId,
+    trackNumber: 1,
     title: title,
     artist: 'JioSaavn Artist',
     album: title,
@@ -235,11 +349,87 @@ async function inspectJioSaavn(parsedUrl) {
     sizeFormatted: '~9.6 MB',
     estimatedSizes: { mp3: '~9.6 MB' }
   };
+
+  return {
+    ...fallbackTrack,
+    platform: 'jiosaavn',
+    platformName: 'JioSaavn',
+    platformIcon: '🟢',
+    type: 'track',
+    tracks: [fallbackTrack]
+  };
 }
 
-// 3. Spotify Inspection via Spotify oEmbed
+// 3. Spotify Inspection via Spotify Embed / oEmbed
 async function inspectSpotify(parsedUrl) {
   const urlStr = parsedUrl.toString();
+
+  // A. Check for Spotify Playlist
+  const playlistMatch = parsedUrl.pathname.match(/\/playlist\/([a-zA-Z0-9]+)/);
+  if (playlistMatch) {
+    try {
+      const embedUrl = `https://open.spotify.com/embed/playlist/${playlistMatch[1]}`;
+      const embedRes = await safeFetch(embedUrl, { maxBytes: 2 * 1024 * 1024 });
+      if (embedRes.ok) {
+        const html = await embedRes.text();
+        const m = html.match(/<script id=\"__NEXT_DATA__\" type=\"application\/json\">([\s\S]*?)<\/script>/);
+        if (m) {
+          const nextData = JSON.parse(m[1]);
+          const entity = nextData.props?.pageProps?.state?.data?.entity;
+          if (entity && Array.isArray(entity.trackList) && entity.trackList.length > 0) {
+            const pTitle = entity.title || 'Spotify Playlist';
+            const pArtist = entity.subtitle || 'Curated Playlist';
+            const pArt = entity.coverArt?.sources?.[0]?.url || 'https://appllifymusic.netlify.app/og-banner.png';
+
+            const tracks = entity.trackList.map((t, idx) => {
+              const durMs = t.duration || 210000;
+              const trackId = `sp_${t.uid || idx + 1}`;
+              const pUrl = t.audioPreview?.url || null;
+              return {
+                id: trackId,
+                trackNumber: idx + 1,
+                title: t.title || `Track ${idx + 1}`,
+                artist: t.subtitle || pArtist,
+                album: pTitle,
+                artwork: pArt,
+                durationMs: durMs,
+                durationString: formatTime(durMs / 1000),
+                sizeFormatted: '~8.4 MB',
+                previewUrl: pUrl,
+                downloadToken: generateDownloadToken(trackId, pUrl),
+                url: t.uri ? `https://open.spotify.com/track/${t.uri.replace('spotify:track:', '')}` : urlStr,
+                searchQuery: `${t.title} ${t.subtitle || ''}`.trim()
+              };
+            });
+
+            return {
+              platform: 'spotify',
+              platformName: 'Spotify',
+              platformIcon: '🟢',
+              type: 'playlist',
+              id: `sp_pl_${playlistMatch[1]}`,
+              title: pTitle,
+              artist: pArtist,
+              album: pTitle,
+              artwork: pArt,
+              genre: 'Curated',
+              year: '2024',
+              tracks: tracks,
+              totalTracks: tracks.length,
+              totalDurationMs: tracks.reduce((a, b) => a + b.durationMs, 0),
+              totalSizeFormatted: `~${tracks.length * 8} MB`,
+              url: urlStr,
+              mediaFormats: ['mp3']
+            };
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Spotify embed extraction failed, falling back to oembed:', e.message);
+    }
+  }
+
+  // B. Fallback / Single Track oEmbed
   const oembedUrl = `https://open.spotify.com/oembed?url=${encodeURIComponent(urlStr)}`;
   const res = await safeFetch(oembedUrl, { maxBytes: 512 * 1024 });
 
@@ -254,12 +444,9 @@ async function inspectSpotify(parsedUrl) {
   const artwork = data.thumbnail_url || 'https://appllifymusic.netlify.app/og-banner.png';
   const trackId = `spotify_${Date.now()}`;
 
-  return {
-    platform: 'spotify',
-    platformName: 'Spotify',
-    platformIcon: '🟢',
-    type: isPlaylist ? 'playlist' : 'track',
+  const singleTrack = {
     id: trackId,
+    trackNumber: 1,
     title: title,
     artist: artist,
     album: title,
@@ -269,22 +456,29 @@ async function inspectSpotify(parsedUrl) {
     url: urlStr,
     previewUrl: null,
     downloadToken: generateDownloadToken(trackId, null),
-    searchQuery: `${artist} - ${title} audio`,
+    searchQuery: `${title} ${artist}`.trim(),
     mediaFormats: ['mp3'],
     sizeFormatted: '~8.4 MB',
     estimatedSizes: { mp3: '~8.4 MB' }
+  };
+
+  return {
+    ...singleTrack,
+    platform: 'spotify',
+    platformName: 'Spotify',
+    platformIcon: '🟢',
+    type: isPlaylist ? 'playlist' : 'track',
+    tracks: [singleTrack]
   };
 }
 
 // 4. Gaana Inspection - Strictly extracts metadata without fetching arbitrary visitor URL!
 async function inspectGaana(parsedUrl) {
   const urlStr = parsedUrl.toString();
-  // Strictly parse slug from pathname only - NO outbound fetch to user-supplied Gaana URL
   const slugMatch = parsedUrl.pathname.match(/(?:song|album)\/([a-zA-Z0-9-_]+)/i);
   const rawSlug = slugMatch ? slugMatch[1].replace(/[-_]/g, ' ').replace(/[^a-zA-Z0-9 ]/g, '').trim() : '';
   const title = rawSlug ? rawSlug.replace(/\b\w/g, l => l.toUpperCase()) : 'Gaana Track';
 
-  // Safely resolve metadata using official iTunes Search API CDN via safeFetch
   let resolvedPreview = null;
   let artist = 'Gaana Artist';
   let artwork = 'https://appllifymusic.netlify.app/og-banner.png';
@@ -310,12 +504,9 @@ async function inspectGaana(parsedUrl) {
   const isPlaylist = /playlist|album/i.test(parsedUrl.pathname);
   const trackId = `gaana_${Date.now()}`;
 
-  return {
-    platform: 'gaana',
-    platformName: 'Gaana',
-    platformIcon: '🔴',
-    type: isPlaylist ? 'playlist' : 'track',
+  const singleTrack = {
     id: trackId,
+    trackNumber: 1,
     title: title,
     artist: artist,
     album: title,
@@ -325,10 +516,19 @@ async function inspectGaana(parsedUrl) {
     url: urlStr,
     previewUrl: resolvedPreview,
     downloadToken: generateDownloadToken(trackId, resolvedPreview),
-    searchQuery: `${artist} - ${title} audio`,
+    searchQuery: `${title} ${artist}`.trim(),
     mediaFormats: ['mp3'],
     sizeFormatted: '~8.4 MB',
     estimatedSizes: { mp3: '~8.4 MB' }
+  };
+
+  return {
+    ...singleTrack,
+    platform: 'gaana',
+    platformName: 'Gaana',
+    platformIcon: '🔴',
+    type: isPlaylist ? 'playlist' : 'track',
+    tracks: [singleTrack]
   };
 }
 
@@ -345,12 +545,9 @@ async function inspectYouTube(parsedUrl) {
   const data = await res.json();
   const trackId = `yt_${Date.now()}`;
 
-  return {
-    platform: 'youtube',
-    platformName: 'YouTube',
-    platformIcon: '🔴',
-    type: 'video',
+  const singleTrack = {
     id: trackId,
+    trackNumber: 1,
     title: data.title || 'YouTube Video',
     artist: data.author_name || 'YouTube Creator',
     album: 'YouTube',
@@ -360,10 +557,19 @@ async function inspectYouTube(parsedUrl) {
     url: urlStr,
     previewUrl: null,
     downloadToken: generateDownloadToken(trackId, null),
-    searchQuery: `${data.author_name} - ${data.title} audio`,
+    searchQuery: `${data.title} ${data.author_name}`.trim(),
     mediaFormats: ['mp3', 'mp4'],
     sizeFormatted: '~9.6 MB',
     estimatedSizes: { mp3: '~9.6 MB', mp4: '~28.4 MB' }
+  };
+
+  return {
+    ...singleTrack,
+    platform: 'youtube',
+    platformName: 'YouTube',
+    platformIcon: '🔴',
+    type: 'video',
+    tracks: [singleTrack]
   };
 }
 
@@ -380,12 +586,9 @@ async function inspectSoundCloud(parsedUrl) {
   const data = await res.json();
   const trackId = `sc_${Date.now()}`;
 
-  return {
-    platform: 'soundcloud',
-    platformName: 'SoundCloud',
-    platformIcon: '🟠',
-    type: 'track',
+  const singleTrack = {
     id: trackId,
+    trackNumber: 1,
     title: data.title || 'SoundCloud Track',
     artist: data.author_name || 'SoundCloud Artist',
     album: 'SoundCloud',
@@ -395,10 +598,19 @@ async function inspectSoundCloud(parsedUrl) {
     url: urlStr,
     previewUrl: null,
     downloadToken: generateDownloadToken(trackId, null),
-    searchQuery: `${data.author_name} - ${data.title} audio`,
+    searchQuery: `${data.title} ${data.author_name}`.trim(),
     mediaFormats: ['mp3'],
     sizeFormatted: '~8.0 MB',
     estimatedSizes: { mp3: '~8.0 MB' }
+  };
+
+  return {
+    ...singleTrack,
+    platform: 'soundcloud',
+    platformName: 'SoundCloud',
+    platformIcon: '🟠',
+    type: 'track',
+    tracks: [singleTrack]
   };
 }
 
@@ -468,6 +680,24 @@ exports.handler = async function(event, context) {
       media = await inspectSoundCloud(parsedUrl);
     }
 
+    // Ensure tracks array is always present and non-empty
+    if (!media.tracks || !Array.isArray(media.tracks) || media.tracks.length === 0) {
+      media.tracks = [{
+        id: media.id || `track_${Date.now()}`,
+        trackNumber: 1,
+        title: media.title || 'Track',
+        artist: media.artist || 'Artist',
+        album: media.album || media.title || 'Music',
+        artwork: media.artwork || 'https://appllifymusic.netlify.app/og-banner.png',
+        durationMs: media.durationMs || 210000,
+        durationString: media.durationString || '3:30',
+        previewUrl: media.previewUrl || null,
+        downloadToken: media.downloadToken || generateDownloadToken(media.id, media.previewUrl),
+        url: media.url || rawUrl,
+        searchQuery: `${media.title} ${media.artist}`.trim()
+      }];
+    }
+
     return {
       statusCode: 200,
       headers,
@@ -478,7 +708,6 @@ exports.handler = async function(event, context) {
       })
     };
   } catch (err) {
-    // Sanitize error response: never expose internal network details, system paths, or stack traces
     console.error('Inspection error:', err.message);
     return {
       statusCode: 500,

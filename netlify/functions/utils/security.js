@@ -28,6 +28,7 @@ const ALLOWED_OUTBOUND_HOSTS = new Set([
   'itunes.apple.com',
   'audio-ssl.itunes.apple.com',
   'open.spotify.com',
+  'music.apple.com',
   'www.jiosaavn.com',
   'www.youtube.com',
   'soundcloud.com'

@@ -700,6 +700,12 @@ async function downloadMediaAction(format) {
       if (mediaProgressText) mediaProgressText.textContent = `✓ Download ready! Tap below if not started.`;
       showToast(`✓ Ready: "${currentSingleMedia.title}"!`);
       if (btn) btn.disabled = false;
+    } else {
+      const msg = data.error || 'Audio stream is currently unavailable for this title.';
+      if (mediaProgressText) mediaProgressText.textContent = `⚠️ ${msg}`;
+      if (mediaProgressSpeed) mediaProgressSpeed.textContent = '';
+      showToast(`⚠️ ${msg}`, '⚠️');
+      if (btn) btn.disabled = false;
     }
   } catch (err) {
     clearTimeout(tick1);
@@ -767,7 +773,8 @@ function displayAlbum(album) {
   albumArtist.textContent = album.artist;
   albumGenre.textContent = album.genre || 'Music';
   albumYear.textContent = album.year || '';
-  albumCount.textContent = `${album.tracks.length} Songs`;
+  const tracks = Array.isArray(album.tracks) ? album.tracks : [];
+  albumCount.textContent = `${tracks.length} Songs`;
 
   if (albumTotalSize && albumSizeBullet) {
     if (album.totalSizeFormatted) {
@@ -787,7 +794,7 @@ function displayAlbum(album) {
 
   // Render Tracks
   tracksList.innerHTML = '';
-  album.tracks.forEach((track, idx) => {
+  tracks.forEach((track, idx) => {
     const row = document.createElement('div');
     row.className = 'track-row';
     row.id = `track-row-${idx}`;
@@ -850,6 +857,12 @@ function displayAlbum(album) {
 btnDownloadAlbum.addEventListener('click', async () => {
   if (!currentAlbum) return;
 
+  const tracks = Array.isArray(currentAlbum.tracks) ? currentAlbum.tracks : [];
+  if (tracks.length === 0) {
+    showToast('⚠️ No songs found in this playlist to download.', '⚠️');
+    return;
+  }
+
   const qLabel = currentAudioQuality === 'hires' ? 'Hi-Res Lossless' : (currentAudioQuality === 'lossless' ? 'Lossless' : 'High Quality');
   btnDownloadAlbum.disabled = true;
   downloadAlbumText.textContent = `Downloading ${qLabel}...`;
@@ -865,42 +878,36 @@ btnDownloadAlbum.addEventListener('click', async () => {
   queueTrackStatus.textContent = `Starting ${currentAlbum.title}...`;
 
   try {
-    if (currentAlbum.tracks && currentAlbum.tracks.length > 0) {
-      showToast(`Starting batch download of ${currentAlbum.tracks.length} songs...`);
-      updateStepper('album', 2);
+    showToast(`Starting batch download of ${tracks.length} songs...`);
+    updateStepper('album', 2);
 
-      let count = 0;
-      for (let i = 0; i < currentAlbum.tracks.length; i++) {
-        const t = currentAlbum.tracks[i];
-        const pct = Math.round(((i + 1) / currentAlbum.tracks.length) * 100);
-        albumProgressPercent.textContent = `${pct}%`;
-        albumProgressFill.style.width = `${pct}%`;
-        albumProgressText.textContent = `Downloading song ${i + 1} of ${currentAlbum.tracks.length}: "${t.title}"...`;
-        await downloadSingleTrackAction(t, i);
-        count++;
-        await new Promise(r => setTimeout(r, 600));
-      }
+    let count = 0;
+    for (let i = 0; i < tracks.length; i++) {
+      const t = tracks[i];
+      const pct = Math.round(((i + 1) / tracks.length) * 100);
+      albumProgressPercent.textContent = `${pct}%`;
+      albumProgressFill.style.width = `${pct}%`;
+      albumProgressText.textContent = `Downloading song ${i + 1} of ${tracks.length}: "${t.title}"...`;
+      const ok = await downloadSingleTrackAction(t, i);
+      if (ok) count++;
+      await new Promise(r => setTimeout(r, 600));
+    }
 
-      updateStepper('album', 5);
-      albumProgressText.textContent = `✓ Completed! Saved all ${count} tracks to device.`;
+    updateStepper('album', 5);
+    if (count > 0) {
+      albumProgressText.textContent = `✓ Saved ${count} of ${tracks.length} songs! Tap green buttons below to re-save any song.`;
       albumProgressPercent.textContent = '100%';
       albumProgressFill.style.width = '100%';
-      btnDownloadAlbum.disabled = false;
-      downloadAlbumText.textContent = '✓ Album Downloaded';
-      showToast(`✓ All ${count} tracks downloaded to device!`);
+      downloadAlbumText.textContent = `✓ ${count} Songs Downloaded`;
+      showToast(`✓ All ${count} songs saved to your device!`, '✅');
     } else {
-      const res = await fetch(apiUrl('/api/download-album'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ album: currentAlbum, quality: currentAudioQuality, codec: currentAudioCodec })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      if (data.jobId) activeDownloadJobId = data.jobId;
+      albumProgressText.textContent = `⚠️ Automatic downloads were blocked by browser. Tap individual Download buttons on songs below.`;
+      downloadAlbumText.textContent = `Download Album (${qLabel})`;
     }
   } catch (err) {
     console.error('Download failed:', err);
     showToast('Download notice: ' + (err.message || 'Saved to offline library'), '⚠️');
+  } finally {
     btnDownloadAlbum.disabled = false;
     setAudioQuality(currentAudioQuality, currentAudioCodec);
   }
@@ -930,12 +937,12 @@ async function downloadSingleTrackAction(track, idx) {
             id: track.id,
             title: track.title,
             artist: track.artist || currentAlbum?.artist,
-            album: currentAlbum?.title,
+            album: track.album || currentAlbum?.title,
             artwork: track.artwork || currentAlbum?.artwork,
             previewUrl: track.previewUrl,
             downloadToken: track.downloadToken,
             url: track.url,
-            searchQuery: track.searchQuery || `${track.artist || currentAlbum?.artist} - ${track.title}`
+            searchQuery: track.searchQuery || `${track.title} ${track.artist || ''}`
           },
           format: 'mp3',
           quality: currentAudioQuality,
@@ -951,12 +958,12 @@ async function downloadSingleTrackAction(track, idx) {
             id: track.id,
             title: track.title,
             artist: track.artist || currentAlbum?.artist,
-            album: currentAlbum?.title,
+            album: track.album || currentAlbum?.title,
             artwork: track.artwork || currentAlbum?.artwork,
             previewUrl: track.previewUrl,
             downloadToken: track.downloadToken,
             url: track.url,
-            searchQuery: track.searchQuery || `${track.artist || currentAlbum?.artist} - ${track.title}`
+            searchQuery: track.searchQuery || `${track.title} ${track.artist || ''}`
           },
           format: 'mp3',
           quality: currentAudioQuality,
@@ -966,25 +973,25 @@ async function downloadSingleTrackAction(track, idx) {
     }
 
     const contentType = res.headers.get('content-type') || '';
-    if (contentType.includes('audio') || contentType.includes('octet-stream')) {
+    if (res.ok && (contentType.includes('audio') || contentType.includes('octet-stream'))) {
       const blob = await res.blob();
       const blobUrl = window.URL.createObjectURL(blob);
+      const filename = `${track.artist || currentAlbum?.artist || 'Artist'} - ${track.title}.mp3`;
       const a = document.createElement('a');
       a.href = blobUrl;
-      a.download = `${track.artist || currentAlbum?.artist || 'Artist'} - ${track.title}.mp3`;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       a.remove();
-      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 10000);
 
       if (actionContainer) {
-        actionContainer.innerHTML = `<a class="track-status-pill status-done" href="${blobUrl}" download="${track.artist || 'Artist'} - ${track.title}.mp3">✓ Saved (Tap)</a>`;
+        actionContainer.innerHTML = `<a class="track-status-pill status-done" href="${blobUrl}" download="${filename}">✓ Saved (Tap)</a>`;
       }
-      showToast(`✓ Downloaded "${track.title}"!`);
-      return;
+      showToast(`✓ Downloaded "${track.title}"!`, '✅');
+      return true;
     }
 
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     if (data.downloadUrl) {
       const a = document.createElement('a');
       a.href = data.downloadUrl;
@@ -996,9 +1003,18 @@ async function downloadSingleTrackAction(track, idx) {
       if (actionContainer) {
         actionContainer.innerHTML = `<span class="track-status-pill status-done">Downloaded ✓</span>`;
       }
-      showToast(`✓ Downloaded "${track.title}"!`);
-    } else if (data.jobId) {
-      activeDownloadJobId = data.jobId;
+      showToast(`✓ Downloaded "${track.title}"!`, '✅');
+      return true;
+    } else {
+      if (actionContainer) {
+        actionContainer.innerHTML = `<button class="btn-download-track" data-index="${idx}">Retry</button>`;
+        actionContainer.querySelector('.btn-download-track')?.addEventListener('click', e => {
+          e.stopPropagation();
+          downloadSingleTrackAction(track, idx);
+        });
+      }
+      showToast(`⚠️ "${track.title}": ${data.error || 'Audio stream unavailable'}`, '⚠️');
+      return false;
     }
   } catch (err) {
     if (actionContainer) {
@@ -1008,6 +1024,8 @@ async function downloadSingleTrackAction(track, idx) {
         downloadSingleTrackAction(track, idx);
       });
     }
+    showToast(`⚠️ "${track.title}": Download failed`, '⚠️');
+    return false;
   }
 }
 

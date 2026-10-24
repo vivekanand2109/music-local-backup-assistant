@@ -515,8 +515,7 @@ async function main() {
     const res = await downloadHandler(event, {});
     // Must never return 302 redirect to evil.com
     assert.notStrictEqual(res.statusCode, 302);
-    assert.strictEqual(res.statusCode, 200);
-    const body = JSON.parse(res.body);
+    assert.ok([200, 404].includes(res.statusCode));
     // Should NOT stream or redirect to evil.com
     assert.strictEqual(res.headers.Location, undefined);
   });
