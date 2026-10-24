@@ -29,13 +29,15 @@ const ALLOWED_OUTBOUND_HOSTS = new Set([
   'audio-ssl.itunes.apple.com',
   'open.spotify.com',
   'music.apple.com',
+  'p.scdn.co',
   'www.jiosaavn.com',
   'www.youtube.com',
   'soundcloud.com'
 ]);
 
 const ALLOWED_AUDIO_HOSTS = new Set([
-  'audio-ssl.itunes.apple.com'
+  'audio-ssl.itunes.apple.com',
+  'p.scdn.co'
 ]);
 
 // Secret for HMAC download tokens
